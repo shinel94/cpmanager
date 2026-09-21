@@ -1,0 +1,64 @@
+# Wave 4 Log
+
+## Status
+
+- Started: 2026-09-21
+- Scope: project CRUD Route Handlers, full-save API, chart read API
+- Status: Complete
+
+## Implemented
+
+- Added `app/lib/server/db/app-database.ts` to apply migrations when opening an application DB connection.
+- Added project Route Handlers:
+  - `GET /api/projects`
+  - `POST /api/projects`
+  - `GET /api/projects/:id`
+  - `PUT /api/projects/:id`
+  - `DELETE /api/projects/:id`
+- Added `GET /api/projects/:id/chart`.
+- Added route ID parsing and shared route error handling.
+- Full save returns the latest project tree with newly assigned integer IDs.
+- Chart responses add `displayName` using the shared chord realization engine.
+- Routes work against a clean DB because migrations are applied on connection.
+
+## Contract Decisions
+
+- No section-level or chord-level mutation APIs are exposed.
+- Client edits remain draft state and are persisted only through full project PUT.
+- Project PUT validates the entire tree before starting the transaction.
+- Project PUT response is the re-hydration snapshot for the client.
+- Empty bars are returned with `chords: []`.
+
+## Issues / Resolutions
+
+### W4-001: Clean DB API startup
+
+- Observation: Wave 3 repositories assumed migrations had already run, while a fresh Next.js process could receive project API requests before a CLI migration.
+- Resolution: Project API connections now apply idempotent migrations before repository operations.
+- Result: A clean temporary DB passed the full HTTP flow without a separate migration command.
+
+### W4-002: Dynamic route parameters
+
+- Observation: Next.js 15 App Router dynamic route parameters are asynchronous.
+- Resolution: Route Handlers use `params: Promise<{ id: string }>` and await the context before parsing IDs.
+
+## Verification
+
+```text
+npm run typecheck -> passed
+npm test -> passed (14 tests)
+npm run build -> passed
+HTTP create -> passed
+HTTP full save -> passed
+HTTP chart displayName -> passed (`C`)
+HTTP delete -> passed
+```
+
+## Gate 4 Result
+
+- Project CRUD API is available.
+- Full project save and re-hydration are available.
+- Chart read API returns hierarchical bars and display code names.
+- Clean DB startup and HTTP end-to-end flow are verified.
+
+Wave 4 is complete. Wave 5 can start with recommendation, technique analysis, and user progression Route Handlers.

@@ -1,0 +1,112 @@
+# Wave 1 Log
+
+## Status
+
+- Started: 2026-09-21
+- Scope: domain catalog, SQLite migrations, recommendation normalization/seed, technique rule seed
+- Status: Complete
+
+## Implemented
+
+- Added `app/lib/server/catalog/chord-catalog.ts`.
+- Added 12 major tonic display values and section names.
+- Added quality, extension, and bass-degree catalogs.
+- Added degree normalization to uppercase Roman numerals.
+- Added numeric bass-degree conversion such as `7 -> VII` and `b7 -> bVII`.
+- Added `app/lib/server/db/migrations.ts` for the 11-table schema.
+- Added system/user progression form-tag relation tables.
+- Added indexes and foreign-key cascade rules.
+- Added `app/lib/server/db/seed.ts` for JSON loading, normalization, validation, and transactional seeding.
+- Added typed technique rules under `app/lib/server/rules/technique-rules.ts`.
+- Added `scripts/migrate_wave1.ts` and `scripts/seed_wave1.ts`.
+- Added Wave 1 unit and database tests in `test/wave1.test.ts`.
+- Added `db:migrate` and `db:seed` npm scripts.
+
+## Data Findings
+
+The existing 160 progression records contain more values than the initial examples in the planning documents:
+
+- `vii°` degree notation
+- `#IV` degree notation
+- `half-diminished` quality
+- `m7b5` extension
+- `sus4` extension
+- numeric and altered bass degrees such as `7` and `b7`
+
+Decision: support these values in the finite catalog and normalize them before persistence. Lowercase degree notation is converted to uppercase degree plus a separate quality value.
+
+Examples:
+
+```text
+ii       -> degree=II, quality=minor
+vii°     -> degree=VII, quality=half-diminished
+b7       -> bass_degree=bVII
+G/B      -> degree=V, bass_degree=VII
+```
+
+## Issues and Resolutions
+
+### W1-001: `DatabaseSync.transaction` type mismatch
+
+- Observation: The runtime API examples used a `transaction` helper, but the installed Node type definitions do not expose `DatabaseSync.transaction`.
+- Resolution: Implemented explicit `BEGIN`, `COMMIT`, and `ROLLBACK` around the seed operation.
+- Result: TypeScript compilation and rollback-compatible seed flow pass.
+
+### W1-002: Existing seed script used an outdated schema
+
+- Observation: `scripts/seed_system_progressions.js` created only two recommendation tables and stored `form_tags` as JSON text.
+- Resolution: Updated the old JavaScript entry point to delegate to the Wave 1 TypeScript seed path using the 11-table schema and relation tables. Existing `--db` and `--dry-run` options are preserved.
+- Result: There is now one seed implementation and one compatibility CLI entry point.
+
+### W1-003: Migration version table deferred
+
+- Observation: The current migration is idempotent `CREATE TABLE IF NOT EXISTS` rather than a versioned migration history.
+- Decision: Accept for Wave 1 foundation; add a migration version table before schema evolution beyond MVP.
+
+### W1-004: Legacy JavaScript seed entry point
+
+- Observation: The existing `scripts/seed_system_progressions.js` implemented the old two-table schema and JSON `form_tags` storage.
+- Resolution: Replaced it with a compatibility wrapper that delegates to `scripts/seed_wave1.ts`.
+- Compatibility: `--db` and `--dry-run` remain available.
+
+### W1-005: Wave 2 contract decisions
+
+- Decision: Use flat canonical tonics: `C, Db, D, Eb, E, F, Gb, G, Ab, A, Bb, B`.
+- Decision: Reject incompatible quality/extension combinations.
+- Initial compatibility matrix:
+  - major: null, maj7, 9, sus4
+  - minor: null, 7, 9
+  - dominant: 7, 9
+  - diminished: null
+  - half-diminished: m7b5
+- Action: Updated the catalog, tests, planning documents, and progression README.
+- Action: Added foreign-key cascade and unique-constraint assertions to Wave 1 tests.
+
+### W1-006: Degree input strictness
+
+- Decision: A degree may contain at most one accidental prefix (`b` or `#`).
+- Action: Reject values such as `bbVI` and `##IV` before persistence or conversion.
+
+## Verification
+
+```text
+npm run typecheck -> passed
+npm test -> passed (4 tests)
+npm run build -> passed
+npm run db:migrate -> passed
+npm run db:seed -> passed (160 progressions, 640 steps, 5 rules)
+db:seed re-run -> passed (idempotent counts preserved)
+legacy seed CLI dry-run -> passed (160 progressions, 640 steps)
+legacy seed CLI with `--db` -> passed (160 progressions, 640 steps, 5 rules)
+```
+
+## Gate 1 Result
+
+- 11 tables created in a clean database.
+- 160 system recommendation rows seeded.
+- 640 system progression step rows seeded.
+- System form-tag relations seeded.
+- Five typed technique rules seeded.
+- Catalog and seed tests passed.
+
+Wave 1 is complete. Wave 2 can start after reviewing the normalized degree and code-attribute contract.

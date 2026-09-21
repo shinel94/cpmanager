@@ -9,9 +9,9 @@
 1. **4마디 고정 (4-Bar Unit)**:
    - 기획 명세(`FR-REC-001`, `FR-REC-002`)에 따라 모든 진행은 겹치지 않는 4마디 블록(`position` 1~4)으로 구성됩니다.
 2. **도수 기반 정규화 (Degree-based)**:
-   - 특정 키(Key)에 종속되지 않고 모든 장조(Major Keys: C, D, E, F, G, A, Bb, Eb 등)로 자동 변환 실현(`FR-CODE-005`, `API-META-006`)될 수 있도록 로마자 도수(`I`, `ii`, `iii`, `IV`, `V`, `vi`, `bVI`, `bVII`, `iv` 등)를 기준으로 정의합니다.
+   - 원본 JSON은 사람이 읽는 기존 표기를 유지할 수 있지만, 적재 시 대문자 로마 도수와 별도 `quality`로 정규화합니다. 조성은 플랫 canonical 목록(C, Db, D, Eb, E, F, Gb, G, Ab, A, Bb, B)을 사용합니다.
 3. **송폼 태그 연계 (Form Tags)**:
-   - 프로젝트 기본 송폼 7종(`Intro`, `Verse`, `Pre-Chorus`, `Chorus`, `Interlude`, `Bridge`, `Outro`) 중 해당 진행이 가장 자연스럽고 빈번하게 사용되는 송폼 태그를 배열/JSON 형태로 매핑합니다.
+   - 프로젝트 기본 송폼 7종(`Intro`, `Verse`, `Pre-Chorus`, `Chorus`, `Interlude`, `Bridge`, `Outro`) 중 해당 진행이 가장 자연스럽고 빈번하게 사용되는 송폼 태그를 관계 테이블에 매핑합니다.
 4. **추천 우선순위 (Priority)**:
    - 대중성, 음악적 완성도, 초심자의 연주/작곡 편의성, 범용성을 고려하여 1~10점 척도(10점이 최우선)로 산정했습니다.
 5. **추천 정렬 4대 기준 매핑**:
@@ -24,13 +24,15 @@
 
 ## 2. 데이터베이스 스키마 매핑
 
-본 데이터는 SQLite의 `system_recommendation_progressions`와 `system_progression_steps` 1:4 관계 테이블에 100% 대응됩니다.
+본 데이터는 SQLite의 `system_recommendation_progressions`, `system_progression_steps`, `system_progression_form_tags` 관계 테이블에 대응됩니다. 실제 적재는 `npm run db:seed`를 기준으로 합니다.
 
 ```text
 system_recommendation_progressions (1) ──── (4) system_progression_steps
+system_recommendation_progressions (1) ──── (N) system_progression_form_tags
 ```
 
-- **진행 테이블**: `id`, `name`, `form_tags`, `description`, `popularity_score`, `connectivity_score`, `diversity_group`, `priority`, `created_at`
+- **진행 테이블**: `id`, `name`, `description`, `popularity_score`, `connectivity_score`, `diversity_group`, `priority`, `created_at`
+- **송폼 태그 테이블**: `progression_id`, `form_tag`
 - **스텝 테이블**: `progression_id`, `position` (1~4), `degree`, `quality`, `extension`, `bass_degree`
 
 ---
@@ -167,5 +169,4 @@ Verse의 차분한 분위기에서 Chorus의 폭발적인 에너지로 전환하
 - **Interlude (간주)**: 19개
 
 *중복 배치를 허용하여 사용자가 특정 송폼을 선택했을 때 다양하고 풍성한 진행이 고르게 추천되도록 구성되어 있습니다.*
-
 

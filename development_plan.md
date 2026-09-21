@@ -10,10 +10,11 @@
 - 편집 중인 송폼·코드·추천 적용 결과는 클라이언트 초안으로 유지한다.
 - 프로젝트 데이터는 사용자가 명시적으로 저장할 때만 전체 PUT 트랜잭션으로 SQLite에 반영한다. 자동 저장은 하지 않는다.
 - Client UI와 Backend 기능은 하나의 Next.js 애플리케이션에서 제공한다.
+- Backend 작업은 `todo.md`, Client UI 작업은 `fe-todo.md`에서 별도로 관리한다.
 - 현재 프로젝트 루트의 `app/` 디렉터리 아래에 모든 애플리케이션 코드를 구현한다.
 - UI는 `app/`의 App Router 페이지·Client Component로 구성하고, Backend API는 `app/api/**/route.ts` Route Handler로 구성한다.
 - 도메인·DB·Repository 같은 서버 전용 모듈은 `app/lib/server/` 아래에 둔다.
-- 내부 데이터는 대문자 로마 숫자 도수와 코드 속성을 저장하고, 화면에는 선택한 장조 조성의 실제 코드로 표시한다.
+- 내부 데이터는 대문자 로마 숫자 도수와 코드 속성을 저장하고, 장조 조성은 플랫 canonical 표기(C, Db, D, Eb, E, F, Gb, G, Ab, A, Bb, B)를 사용한다.
 - 추천·기법 분석은 4마디·4코드 단위다.
 - 사용자 진행은 기본 추천 DB와 분리한다.
 - 기본 추천 진행과 사용자 진행의 송폼 태그는 각각 별도 관계 테이블로 관리한다.
@@ -33,9 +34,23 @@ Next.js 기반 → 환경/스키마 → 조성·코드 변환 → 프로젝트 �
 → 추천 DB/추천 API → 기법 분석 → 사용자 진행 → UI 연결 → MVP 검증
 ```
 
-### Phase 0. 실행 환경 (기반)
+## 2.1 현재 구현 상태
 
-목표: Next.js 로컬 서버를 띄우고 SQLite에 연결하며 Client UI와 Route Handler의 기본 구조를 만든다.
+| Wave | 범위 | 상태 | 주요 산출물 |
+|---|---|---|---|
+| Wave 0 | Next.js·SQLite·테스트 기반 | 완료 | `app/`, health Route Handler, DB 연결, 테스트 기반 |
+| Wave 1 | 카탈로그·11개 테이블·시드 | 완료 | 마이그레이션, 160개 진행·640개 스텝 시드 |
+| Wave 2 | 순수 도메인 엔진 | 완료 | 코드 변환, 다이어토닉, 블록 분할, 도수 매칭 |
+| Wave 3 | Repository·payload 검증·Meta API | 완료 | 프로젝트 저장소, 사용자 진행 저장소, Meta API |
+| Wave 4 | 프로젝트 CRUD·차트 조회 API | 완료 | `app/api/projects`, 차트 조회 |
+| Wave 5 | 추천·기법·사용자 진행 API | 예정 | 추천·분석·사용자 진행 Route Handler |
+| FE Waves | Client UI·초안 상태·화면 | 별도 진행 | `fe-todo.md` 기준 |
+
+Wave별 상세 이슈와 결정사항은 `wave_log/wave0.log`부터 `wave_log/wave3.log`까지 기록한다.
+
+### Phase 0. 실행 환경 (기반, Wave 0 완료)
+
+목표: Next.js 로컬 서버를 띄우고 SQLite에 연결하며 Route Handler와 서버 전용 모듈의 기본 구조를 만든다. UI 셸 작업은 `fe-todo.md`에서 관리한다.
 
 - Next.js App Router 프로젝트 (TypeScript)
 - Node.js 22+ 실행 환경
@@ -72,7 +87,7 @@ app/
 
 ---
 
-### Phase 1. 스키마 · 시드 데이터
+### Phase 1. 스키마 · 시드 데이터 (Wave 1 완료)
 
 목표: 기능 정의서의 11개 테이블을 만들고, `progression/`의 160개 4마디 진행을 추천 DB에 넣는다.
 
@@ -92,13 +107,13 @@ app/
 
 ---
 
-### Phase 2. 조성 · 코드 변환 엔진 (FR-CODE-001, 002, 005)
+### Phase 2. 조성 · 코드 변환 엔진 (FR-CODE-001, 002, 005, Wave 2 완료)
 
-화면보다 먼저 순수 로직을 만든다. 이후 모든 화면이 이 엔진을 쓴다.
+화면과 독립된 순수 로직으로 구현하며, 이후 API와 FE가 동일한 결과를 사용한다.
 
 | 순서 | 기능 | FR |
 |---|---|---|
-| 1 | 12개 표준 장조 조성 목록 및 혼합 표기 | FR-CODE-001 |
+| 1 | 12개 표준 장조 조성 목록 및 플랫 표기 | FR-CODE-001 |
 | 2 | 대문자 로마 도수 + quality + extension + bass → 실제 코드명 | FR-CODE-005 |
 | 3 | 장조 다이어토닉 7코드 생성 | FR-CODE-002 |
 | 4 | 조성 변경 시 저장값은 유지, 표시만 재계산 | FR-CODE-005 |
@@ -109,7 +124,7 @@ app/
 
 ---
 
-### Phase 3. 프로젝트 CRUD (시나리오 A 시작)
+### Phase 3. 프로젝트 CRUD (Wave 4 완료)
 
 | 순서 | 기능 | FR |
 |---|---|---|
@@ -124,7 +139,7 @@ app/
 
 ---
 
-### Phase 4. 송폼 편집
+### Phase 4. 송폼 편집 저장 계약 (Wave 4 완료)
 
 | 순서 | 기능 | FR |
 |---|---|---|
@@ -139,7 +154,7 @@ app/
 
 ---
 
-### Phase 5. 코드 차트 편집
+### Phase 5. 코드 차트 조회 계약 (Wave 4 완료)
 
 추천보다 먼저 수동 입력이 되어야 한다.
 
@@ -157,7 +172,7 @@ app/
 
 ---
 
-### Phase 6. 4마디 추천
+### Phase 6. 4마디 추천 (Wave 5 예정)
 
 핵심 차별 기능. Phase 5가 끝난 뒤에 붙인다.
 
@@ -184,7 +199,7 @@ app/
 
 ---
 
-### Phase 7. 기법 분석 (시나리오 C)
+### Phase 7. 기법 분석 (Wave 5 예정)
 
 코드 변경 직후 호출한다.
 
@@ -200,7 +215,7 @@ app/
 
 ---
 
-### Phase 8. 사용자 진행 (시나리오 B)
+### Phase 8. 사용자 진행 API (Wave 5 예정)
 
 추천과 완전히 분리된 화면에서만 다룬다.
 
@@ -216,9 +231,11 @@ app/
 
 ---
 
-### Phase 9. 화면 연결 · MVP 검증
+### Phase 9. Backend·FE 통합 검증
 
-Next.js UI 골격은 Phase 0부터 만들고, 각 Backend API가 완료될 때 해당 화면을 연결한다. 권장 화면 순서:
+Backend API 검증은 이 문서와 `todo.md`에서, Client UI 연결과 화면 순서는 `fe-todo.md`에서 관리한다.
+
+FE 연결 순서:
 
 1. 프로젝트 목록 (새 곡, 검색, 불러오기, 삭제)
 2. 송폼 편집 + 조성 선택
@@ -459,9 +476,9 @@ technique_rules  (독립, 시드)
 
 ### 4.1 개발 순서별 API
 
-Phase 0 → 8 순으로 구현하면 된다.
+Backend는 Wave 0 → Wave 5 순으로 구현한다. Client UI는 `fe-todo.md`의 FE Wave 순서를 따른다.
 
-### 4.2 Meta / 변환 — Phase 2
+### 4.2 Meta / 변환 — Phase 2 (Wave 3 구현 완료)
 
 | ID | Method | Path | 설명 | 관련 FR |
 |---|---|---|---|---|
@@ -490,7 +507,7 @@ Phase 0 → 8 순으로 구현하면 된다.
 
 ---
 
-### 4.3 프로젝트 — Phase 3
+### 4.3 프로젝트 — Phase 3 (Wave 4 구현 완료)
 
 | ID | Method | Path | 설명 | 관련 FR |
 |---|---|---|---|---|
@@ -517,6 +534,8 @@ Phase 0 → 8 순으로 구현하면 된다.
 
 전체 저장은 `projects` 메타데이터, sections, bars, bar_chords를 하나의 SQLite 트랜잭션으로 처리한다. 어느 단계에서든 검증 또는 저장 오류가 발생하면 전체 변경을 롤백한다.
 
+PUT 성공 응답은 DB에서 새로 발급된 정수 ID를 포함한 최신 프로젝트 전체 트리를 반환한다. 클라이언트는 성공 응답으로 초안을 re-hydrate하며 임시 ID를 폐기한다.
+
 검증:
 
 - name 필수, 공백 불가
@@ -527,7 +546,7 @@ Phase 0 → 8 순으로 구현하면 된다.
 
 ---
 
-### 4.4 송폼 — Phase 4
+### 4.4 송폼 — Phase 4 (Wave 4 구현 완료)
 
 송폼 추가·수정·순서 변경·삭제는 클라이언트 초안에서 처리한다. MVP에는 개별 송폼 mutation API를 두지 않는다. 사용자가 저장할 때 `PUT /api/projects/:id`가 전체 송폼을 검증하고 저장한다.
 
@@ -535,7 +554,7 @@ Phase 0 → 8 순으로 구현하면 된다.
 
 ---
 
-### 4.5 코드 차트 — Phase 5
+### 4.5 코드 차트 — Phase 5 (Wave 4 구현 완료)
 
 | ID | Method | Path | 설명 | 관련 FR |
 |---|---|---|---|---|
@@ -545,23 +564,34 @@ Phase 0 → 8 순으로 구현하면 된다.
 
 ---
 
-### 4.6 추천 — Phase 6
+### 4.6 추천 — Phase 6 (Wave 5 예정)
 
 | ID | Method | Path | 설명 | 관련 FR |
 |---|---|---|---|---|
-| API-REC-001 | GET | `/api/projects/:id/sections/:sectionId/blocks` | 추천 가능한 4마디 블록 목록 | FR-REC-001, 002 |
-| API-REC-002 | POST | `/api/recommendations` | 조건에 맞는 추천 검색 | FR-REC-003~005 |
+| API-REC-001 | POST | `/api/recommendations` | 클라이언트 초안의 4마디 코드 진행을 기준으로 추천 검색 | FR-REC-001~005 |
 
 `POST /api/recommendations` 요청:
 
 ```json
 {
-  "projectId": 1,
-  "sectionId": 2,
+  "tonic": "C",
+  "sectionName": "Chorus",
   "blockStart": 1,
+  "bars": [
+    {
+      "position": 1,
+      "chords": [
+        { "beat": 1, "degree": "I", "quality": "major", "extension": null, "bass_degree": null }
+      ]
+    },
+    { "position": 2, "chords": [] },
+    { "position": 3, "chords": [] },
+    { "position": 4, "chords": [] }
+  ],
   "sort": "popularity",
   "page": 1,
-  "pageSize": 3
+  "pageSize": 3,
+  "excludeDiversityGroups": []
 }
 ```
 
@@ -569,14 +599,16 @@ Phase 0 → 8 순으로 구현하면 된다.
 
 서버 처리:
 
-1. 블록 4마디의 코드 개수 확인
+1. 요청으로 전달된 `bars`가 정확히 4개인지 확인
 2. 복수 코드 마디가 하나라도 있으면 `multi_chord_excluded` 반환
 3. 4칸 모두 입력이면 빈 결과
 4. `system_*`만 조회 (user 진행 제외). 원본은 `progression/*.json` 160선
 5. 입력된 위치의 대문자 degree와 코드 속성 조건을 비교
-6. 현재 구간명이 관계 테이블에 연결된 진행을 우선. 부족하면 도수 조건만으로 보완
+6. `sectionName`이 관계 테이블에 연결된 진행을 우선. 부족하면 도수 조건만으로 보완
 7. sort 적용 후 pageSize만큼 반환
 8. 각 결과에 도수 진행 + 현재 조성 실제 코드 + `diversity_group` 포함
+
+이 API는 프로젝트 ID로 저장된 코드를 조회하지 않는다. 저장되지 않은 클라이언트 초안도 추천할 수 있도록 요청 본문의 조성·송폼 구간·4마디 코드 상태만 사용하며, 추천 요청 자체로 프로젝트 DB를 변경하지 않는다.
 
 정렬:
 
@@ -584,6 +616,8 @@ Phase 0 → 8 순으로 구현하면 된다.
 - `connectivity` → `connectivity_score DESC, priority DESC, id`
 - `diversity` → 서로 다른 `diversity_group`을 돌아가며 선택
 - `random` → 조건 통과 집합을 셔플
+
+`excludeDiversityGroups`가 전달되면 해당 그룹을 우선 제외하고, 결과가 부족할 때만 제외 조건을 완화한다. 클라이언트는 이전 페이지에 노출된 그룹을 누적해 전달한다.
 
 응답 예:
 
@@ -617,7 +651,7 @@ Phase 0 → 8 순으로 구현하면 된다.
 
 ---
 
-### 4.7 기법 분석 — Phase 7
+### 4.7 기법 분석 — Phase 7 (Wave 5 예정)
 
 | ID | Method | Path | 설명 | 관련 FR |
 |---|---|---|---|---|
@@ -627,22 +661,27 @@ Phase 0 → 8 순으로 구현하면 된다.
 
 ```json
 {
-  "projectId": 1,
-  "sectionId": 2,
-  "barId": 15,
-  "beat": 1,
-  "before": { "degree": "I", "quality": "major", "extension": null, "bass_degree": null },
-  "after":  { "degree": "bVI", "quality": "major", "extension": null, "bass_degree": null }
+  "tonic": "C",
+  "sectionName": "Chorus",
+  "blockStart": 1,
+  "target": { "barPosition": 2, "beat": 1 },
+  "bars": [
+    { "position": 1, "chords": [{ "beat": 1, "degree": "I", "quality": "major", "extension": null, "bass_degree": null }] },
+    { "position": 2, "chords": [{ "beat": 1, "degree": "bVI", "quality": "major", "extension": null, "bass_degree": null }] },
+    { "position": 3, "chords": [] },
+    { "position": 4, "chords": [] }
+  ]
 }
 ```
 
 서버 처리:
 
-1. 해당 마디의 4마디 블록 범위 계산
-2. 복수 코드 마디면 자체 분석 스킵, 인접 비교 시 첫/마지막 코드만
-3. 블록 경계 넘김 금지
-4. `technique_rules` 중 `enabled=1`을 priority DESC, id ASC로 검사
-5. 최상위 1개만 반환, 없으면 `{ "technique": null }`
+1. 요청의 `bars`가 정확히 4개인지 검증
+2. 복수 코드 마디 자체 분석 및 중간 박 변경 분석 여부를 판정
+3. 대상 코드가 첫 코드이면 이전 마디 관계, 마지막 코드이면 다음 마디 관계를 분석
+4. 블록 경계 넘김 금지
+5. `technique_rules` 중 `enabled=1`을 priority DESC, id ASC로 검사
+6. 최상위 1개만 반환, 없으면 `{ "technique": null }`
 
 응답 예:
 
@@ -661,7 +700,7 @@ Phase 0 → 8 순으로 구현하면 된다.
 
 ---
 
-### 4.8 사용자 진행 — Phase 8
+### 4.8 사용자 진행 — Phase 8 (Wave 5 예정)
 
 | ID | Method | Path | 설명 | 관련 FR |
 |---|---|---|---|---|
@@ -689,6 +728,8 @@ Phase 0 → 8 순으로 구현하면 된다.
 
 `created_at`은 서버가 넣는다. 이 데이터는 `/api/recommendations`에 절대 섞지 않는다.
 
+사용자 진행 검색 결과는 도수와 코드 속성만 반환한다. 현재 곡의 실제 코드명은 클라이언트가 현재 `tonic`과 공유 변환 엔진으로 계산한다.
+
 `POST /api/user-progressions/search` 요청:
 
 ```json
@@ -710,7 +751,7 @@ Phase 0 → 8 순으로 구현하면 된다.
 | 송폼 편집 | 클라이언트 초안 후 API-PROJ-005 |
 | 조성 선택 | API-META-002, API-META-005, API-META-006 |
 | 코드 차트 | API-CHART-001, API-META-004 |
-| 4마디 추천 | API-REC-001~002 |
+| 4마디 추천 | API-REC-001 |
 | 기법 분석 | API-ANA-001 |
 | 사용자 진행 | API-USER-001~005 |
 | 수동 저장 | API-PROJ-005 |
@@ -721,12 +762,13 @@ Phase 0 → 8 순으로 구현하면 된다.
 
 | 스프린트 | Phase | 산출물 |
 |---|---|---|
-| S0 | 0~1 | 서버, SQLite 11테이블, `seed_system_progressions.js`로 160선 적재 |
-| S1 | 2~3 | 변환 엔진, 프로젝트 CRUD |
-| S2 | 4~5 | 송폼, 코드 차트, 실제 코드 표시 |
-| S3 | 6 | 송폼·도수 조건 추천 + 차트 적용 |
-| S4 | 7~8 | 기법 분석, 사용자 진행 검색 |
-| S5 | 9 | 화면 다듬기, 10분 완성 테스트 |
+| S0 | Wave 0 | Next.js Route Handler 기반, SQLite 연결, 테스트 기반 |
+| S1 | Wave 1 | 카탈로그, 11개 테이블, 160개 추천 진행 시드 |
+| S2 | Wave 2 | 코드 변환, 다이어토닉, 블록 분할, 도수 매칭 |
+| S3 | Wave 3 | Repository, 전체 저장 트랜잭션, Meta API |
+| S4 | Wave 4 | 프로젝트 CRUD Route Handler, 코드 차트 조회 API (완료) |
+| S5 | Wave 5 | 추천·기법 분석·사용자 진행 API |
+| S6 | FE Waves | `fe-todo.md` 기반 Client UI와 초안 상태 통합 |
 
 한 줄 요약: **변환 엔진 → 프로젝트/송폼/차트 저장 → progression 시드 추천 → 기법 → 사용자 검색** 순으로 만든다.
 

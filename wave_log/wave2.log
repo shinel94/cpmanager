@@ -1,0 +1,51 @@
+# Wave 2 Log
+
+## Status
+
+- Started: 2026-09-21
+- Scope: pure domain engines for chord realization, diatonic chords, recommendation blocks, and progression matching
+- Status: Complete with a documented spelling follow-up
+
+## Confirmed Contracts
+
+- Canonical tonic values use flat notation: `C, Db, D, Eb, E, F, Gb, G, Ab, A, Bb, B`.
+- Compatible quality/extension combinations are enforced by the catalog.
+- Degree values use at most one accidental and uppercase Roman numerals after normalization.
+- Recommendation blocks are four non-overlapping bars.
+- A block containing a multi-chord bar is excluded from recommendation.
+- A trailing block shorter than four bars is excluded with `too_short`.
+- User progression searches use four degree tokens and `x` wildcards.
+
+## Implemented
+
+- `app/lib/server/domain/chord-realizer.ts`
+- `app/lib/server/domain/recommendation-blocks.ts`
+- `app/lib/server/domain/progression-matcher.ts`
+- `test/wave2.test.ts`
+
+## Issues / Decisions
+
+### W2-001: Flat-only note spelling
+
+- Decision: Use flat pitch-class names for realization in the MVP.
+- Consequence: Enharmonic spellings such as Cb may display as B in the first realization engine version.
+- Follow-up: Improve key-aware note spelling only if user testing requires theoretical spelling precision.
+
+## Verification
+
+```text
+npm run typecheck -> passed
+npm test -> passed (8 tests)
+npm run build -> passed
+```
+
+## Gate 2 Result
+
+- Flat canonical tonic realization is implemented.
+- Major diatonic chords are generated for all 12 canonical tonics.
+- Chord extensions and slash-bass realization are covered by tests.
+- Recommendation blocks are split into non-overlapping four-bar units.
+- Multi-chord blocks and trailing short blocks are excluded with explicit reasons.
+- Degree wildcard and partial progression matching are covered by tests.
+
+Wave 2 is complete. The remaining note is theoretical spelling precision for enharmonic notes such as Cb, which is deferred unless user-facing notation requires it.

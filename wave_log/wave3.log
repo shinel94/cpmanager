@@ -1,0 +1,77 @@
+# Wave 3 Log
+
+## Status
+
+- Started: 2026-09-21
+- Scope: payload validation, SQLite repositories, atomic project save, user progression storage, Meta Route Handlers
+- Status: Complete
+
+## Implemented
+
+- Added `app/lib/server/validation/project-payload.ts`.
+- Added full project payload validation for project, sections, bars, beats, and code attributes.
+- Added `app/lib/server/repositories/project-repository.ts`.
+- Added project creation, listing, name search, full read, atomic full save, and deletion.
+- Added `app/lib/server/repositories/user-progression-repository.ts`.
+- Added user progression create, list, name search, detail, and delete operations.
+- Added shared JSON response helpers under `app/lib/server/http/responses.ts`.
+- Added Meta Route Handlers:
+  - `/api/meta/keys`
+  - `/api/meta/section-names`
+  - `/api/meta/chord-catalog`
+  - `/api/meta/diatonic`
+  - `/api/meta/realize`
+- Added Wave 3 repository, validation, and Route Handler tests.
+
+## Decisions / Contracts
+
+- Project editing remains a client draft; only the full save operation changes project tables.
+- Full project save deletes and recreates sections, bars, and bar chords inside one transaction.
+- Payload section positions start at 0; bar positions start at 1.
+- Every section payload must contain exactly `bar_count` bars.
+- Code beats are unique per bar and limited to 1 through 4.
+- User progressions are stored separately from system recommendations.
+- User progression steps are exactly four positions.
+- Meta APIs use the same flat tonic catalog and chord realization engine as the domain tests.
+- UI implementation is out of backend scope and is tracked separately in `fe-todo.md`.
+
+### W3-003: Recommendation request must use client draft data
+
+- Observation: The earlier recommendation API example accepted `projectId`, `sectionId`, and `blockStart`, which would require reading persisted project data.
+- Conflict: The product uses client drafts and only persists on explicit full save.
+- Decision: `/api/recommendations` receives `tonic`, `sectionName`, `blockStart`, and the four draft bars with their current chords. It does not require a project ID and does not read or mutate project tables.
+- Follow-up: Implement the recommendation API against this request contract in Wave 5.
+
+## Issues and Resolutions
+
+### W3-001: Incomplete bar payload validation
+
+- Observation: The first validator version accepted an empty `bars` array even when `bar_count` was greater than zero because it only compared existing positions.
+- Resolution: Added an explicit collection-length check to sequential position validation.
+- Test: Invalid four-bar payload with zero bars now fails and leaves the existing project unchanged.
+
+### W3-002: Database row typing
+
+- Observation: Node's `DatabaseSync` result type is generic `Record<string, SQLOutputValue>`.
+- Resolution: Added explicit repository row types at DB boundaries and kept domain payload types separate.
+
+## Verification
+
+```text
+npm run typecheck -> passed
+npm test -> passed (13 tests)
+npm run build -> passed
+GET /api/meta/keys -> passed
+GET /api/meta/diatonic?tonic=C -> passed
+POST /api/meta/realize -> passed (C, G7)
+```
+
+## Gate 3 Result
+
+- Project payload validation is active.
+- Project save is atomic and rollback-tested.
+- Project child rows are deleted through cascade or replacement logic.
+- User progression data remains separate from system recommendation data.
+- Meta APIs return catalog and realization results using shared domain logic.
+
+Wave 3 is complete. Wave 4 can start with project CRUD Route Handlers and chart read API.

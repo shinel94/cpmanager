@@ -1,0 +1,82 @@
+# Wave 0 Log
+
+## Status
+
+- Started: 2026-09-21
+- Scope: Next.js App Router, basic Client UI, health Route Handler, SQLite connection, test runner
+- Status: Complete with follow-up items
+
+## Confirmed Decisions
+
+- The application will be implemented under the project-root `app/` directory.
+- Client UI and Backend API will be provided by one Next.js application.
+- Backend endpoints will use Next.js Route Handlers under `app/api/**/route.ts`.
+- Server-only modules will be placed under `app/lib/server/`.
+- SQLite will use Node's built-in `node:sqlite` API.
+- The project targets Node.js 22 or newer.
+
+## Findings
+
+### W0-001: Repository had no Next.js application scaffold
+
+- Observation: There was no `package.json`, `app/`, `tsconfig.json`, or Next.js configuration.
+- Action: Created the initial Next.js TypeScript scaffold, App Router page, health Route Handler, SQLite module, and test file.
+- Follow-up: Install dependencies and run the Wave 0 verification commands.
+
+### W0-002: Node runtime supports `node:sqlite`
+
+- Observation: The available runtime is Node v26.7.0 and `node:sqlite` loads successfully.
+- Decision: Use `node:sqlite` instead of adding a native SQLite npm dependency for the initial local version.
+
+## Issues / Decisions Needed
+
+- Verify that the selected Next.js version and `serverExternalPackages` configuration work with the installed runtime.
+- Decide whether the final application will keep TypeScript strict mode without exceptions.
+- Confirm the production database location before packaging the desktop version.
+
+## Verification Results
+
+- Node version check: passed, v26.7.0.
+- npm version check: passed, v11.19.0.
+- `node:sqlite` smoke check: passed.
+- Next.js dependency installation: passed.
+- Health endpoint check: passed (`{"ok":true,"service":"cpmanager","database":"ok"}`).
+- `node:test` database test: passed (1 test).
+- TypeScript check: passed (`npm run typecheck`).
+- Next.js production build: passed (`npm run build`).
+
+## Next Actions
+
+## Verification Commands
+
+```text
+npm install       -> passed
+npm test          -> passed
+npm run typecheck -> passed
+npm run build     -> passed
+npm run dev + GET /api/health -> passed
+```
+
+## Issues / Follow-ups
+
+### W0-003: `next lint` is deprecated and interactive
+
+- Observation: Next.js 15.5.25 reports that `next lint` is deprecated and opens an interactive ESLint setup prompt when no ESLint configuration exists.
+- Action: Replaced the initial `lint` script with a non-interactive `typecheck` script using `tsc --noEmit`.
+- Follow-up: Add an explicit ESLint CLI configuration in a later quality/tooling task if linting is required.
+
+### W0-004: npm audit warnings
+
+- Observation: `npm install` reported 2 vulnerabilities: 1 moderate and 1 high.
+- Action: No automatic `npm audit fix --force` was applied because it may change framework versions during initial setup.
+- Follow-up: Review dependency paths before release packaging.
+
+### W0-005: Server shutdown cleanup
+
+- Observation: The current database module opens and closes a connection per health check; no long-lived global connection exists yet.
+- Decision: Defer explicit application shutdown hooks until a shared repository connection is introduced.
+
+## Next Actions
+
+- Start Wave 1 only after reviewing the canonical domain catalog and migration contract.
+- Preserve `app/` as the application implementation root.

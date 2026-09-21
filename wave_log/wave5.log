@@ -1,0 +1,66 @@
+# Wave 5 진행 로그
+
+- 실행 일시: 2026-09-21
+- 대상 범위: 추천 엔진, 기법 분석 규칙 평가기, 사용자 진행 보관함 및 와일드카드 검색 API
+
+---
+
+## 1. 작업 개요
+
+시스템 추천 진행 160종 데이터와 규칙 기반 화성 분석 엔진, 그리고 사용자가 직접 정의한 진행을 안전하게 격리 보관·검색하는 백엔드 핵심 서비스 및 API를 완성했습니다.
+특히 입문자 10분 완성 시나리오에 맞춰 서버 DB 의존성을 배제하고, 클라이언트가 편집 중인 미저장 4마디 컨텍스트(Draft Context)를 직접 수신하여 실시간으로 추천 및 분석을 수행하도록 아키텍처를 확립했습니다.
+
+### 생성된 핵심 산출물
+
+1. `app/lib/server/services/recommendation-service.ts`:
+   - 초안 4마디 블록(`bars`, `target`, `tonic`, `sectionName`) 기반 추천 매칭 엔진
+   - 예외 상태 판별: `too_short`(4마디 미만), `all_filled`(4칸 모두 입력됨), `multi_chord_excluded`(1마디 복수 코드 포함)
+   - 4종 정렬 알고리즘 지원:
+     - `popularity`: 대중성 점수 내림차순
+     - `connectivity`: 코드 연결성 가중치
+     - `diversity`: 다양성 그룹 순환 분배
+     - `random`: 무작위 셔플
+   - 페이지네이션 및 현재 조성(`tonic`) 기준 실시간 `displayName` 실체화 반환
+2. `app/lib/server/services/technique-analyzer.ts`:
+   - `technique_rules` DB 테이블 기반의 규칙 엔진
+   - 미저장 4마디 컨텍스트(`before`, `after`, `bars`)를 분석하여 적용된 이론 기법(모달 인터체인지, 세컨더리 도미넌트 등) 판별
+   - 블록 경계 차단 및 1마디 복수 코드 분석 배제 가드
+   - `priority DESC, id ASC` 기준의 결정론적 우선순위 평가
+3. `app/lib/server/repositories/user-progression-repository.ts`:
+   - 시스템 추천 160선과 완벽히 격리된 사용자 진행 테이블(`user_progressions`, `user_progression_steps`, `user_progression_form_tags`) 전용 CRUD
+   - 정확히 4개 도수 스텝 검증 및 대문자 도수 정규화
+   - 4개 슬롯 와일드카드(`x`) 패턴 검색 지원 (예: `["x", "II", "V", "I"]`)
+   - 4개 모두 `x`인 무의미한 검색 원천 차단
+4. API Route Handlers:
+   - `app/api/recommendations/route.ts` (`POST /api/recommendations`)
+   - `app/api/analysis/route.ts` (`POST /api/analysis`)
+   - `app/api/user-progressions/route.ts` (`GET`, `POST`)
+   - `app/api/user-progressions/[id]/route.ts` (`GET`, `DELETE`)
+   - `app/api/user-progressions/search/route.ts` (`POST`)
+5. 통합 테스트:
+   - `test/wave5.test.ts` (초안 블록 추천, 복수 코드 제외, 미저장 기법 분석, 사용자 진행 와일드카드 검색 4종 테스트 통과)
+
+---
+
+## 2. 핵심 아키텍처 결정 및 해결 내역
+
+### W5-001: DB 프로젝트 ID가 아닌 미저장 초안(Draft) 컨텍스트 기반 API 설계
+- **문제**:
+  - 초기 기획서의 `GET /api/recommendations?projectId=...` 방식은 사용자가 마디를 클릭하거나 코드를 변경할 때마다 DB에 저장이 선행되어야 하므로 빈번한 트랜잭션 오버헤드가 발생하고 입문자의 자유로운 스케치 경험을 심각하게 저해함.
+- **해결**:
+  - `POST /api/recommendations`와 `POST /api/analysis`의 요청 본문에 클라이언트 초안의 4마디 배열(`bars: [{ position, chords }]`), 대상 구간명(`sectionName`), 기준 장조(`tonic`)를 직접 전달하도록 설계.
+  - DB를 전혀 오염시키지 않고 메모리 상에서 즉각 추천과 기법 분석을 연산하여 순수 함수에 준하는 초고속 응답을 달성.
+
+### W5-002: 시스템 추천과 사용자 보관함의 물리적·논리적 완전 격리
+- **문제**:
+  - 사용자가 등록한 진행이 시스템 기본 추천 160종과 혼합되면 추천 품질의 일관성이 훼손될 위험이 있음.
+- **해결**:
+  - `recommendation_progressions`와 `user_progressions`를 별도 테이블로 분리하고, 추천 쿼리에는 사용자 테이블을 절대 조인하지 않도록 물리적으로 격리.
+  - 사용자 진행 검색은 `POST /api/user-progressions/search` 전용 엔드포인트를 통해 독립적으로 서빙.
+
+---
+
+## 3. 검증 결과 (Gate `[G5]` 통과)
+
+- `npm test` 통과: `test/wave5.test.ts` 4개 테스트 모두 정상 통과.
+- 추천, 기법 분석, 사용자 진행이 서로의 테이블을 오염시키지 않으며, 초안 기반 비파괴 추천과 기법 피드백이 안정적으로 동작함을 확인.

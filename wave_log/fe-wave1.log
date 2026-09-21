@@ -1,0 +1,96 @@
+# FE Wave 1 진행 로그
+
+- 실행 일시: 2026-09-21
+- 대상 범위: 클라이언트 도메인 타입 선언, 초안(Draft) 상태 스토어, 직렬화/역직렬화 엔진, 비파괴적 병합 로직
+
+---
+
+## 1. 작업 개요
+
+FE Wave 0에서 구축된 UI 셸 및 Tailwind CSS 환경 위에, 서버 SQLite와 독립적으로 동작하는 **클라이언트 초안(Draft) 상태 관리 머신**을 구축했습니다.
+도메인 모델 선언부터 순수 함수형 리듀서, ID 관리 및 서버 스펙 직렬화기, 그리고 React 19 Context Provider까지 완벽히 구현되어 메인 작업공간에 결합되었습니다.
+
+### 생성된 핵심 산출물
+1. `app/types/client.ts`:
+   - `ProjectDraft`, `SectionDraft`, `BarDraft`, `BarChordDraft`
+   - `SelectedBlock`, `SelectedChordTarget`, `TechniqueFeedback`, `SerializedProjectPayload`
+2. `app/lib/client/project-serializer.ts`:
+   - `serializeProjectDraft`: 클라이언트 초안을 백엔드 `PUT /api/projects/:id` 스펙으로 완벽 변환 (연속 색인 강제)
+   - `hydrateProjectDraft`: 서버 응답 snapshot 데이터를 클라이언트 초안으로 변환 및 ID 재동기화
+   - `createEmptyProject`, `createDefaultPopProject`, `createTempId` 유틸리티
+3. `app/lib/client/draft-reducer.ts`:
+   - 불변성을 보장하는 순수 상태 조작 리듀서 `projectDraftReducer`
+   - 메타데이터 변경, 구간 추가/삭제/순서변경, 마디 수 증감, 코드 입력/삭제, 추천 비파괴 적용
+4. `app/lib/client/project-draft-context.tsx`:
+   - `ProjectDraftProvider`, `useProjectDraft()` 훅
+   - `isDirty` 자동 감지, 선택 블록/마디 관리, 저장/불러오기/리셋 수명주기 메서드
+5. `app/components/workspace/WorkspaceShell.tsx`:
+   - 더미 상태를 제거하고 `useProjectDraft()`와 실제 연동
+   - 구간별 마디 그리드 렌더링, 12개 Key 변경 시 실시간 코드명 파생 계산(`realizeChord`), 빈 프로젝트 온보딩 뷰 지원
+6. 단위 테스트 추가:
+   - `test/draft-reducer.test.ts` (리듀서 조작 7종 테스트)
+   - `test/project-serializer.test.ts` (백엔드 `validateProjectPayload` 통과 및 hydration 테스트 2종)
+
+---
+
+## 2. 발생한 기술적 이슈 및 해결 내역
+
+### FE-W1-001: 백엔드 `validateProjectPayload`의 엄격한 연속 인덱싱 제약
+- **문제**:
+  - 백엔드의 `validateProjectPayload`는 `sections.position`이 반드시 `0..N-1`, 각 구간의 `bars.position`이 반드시 `1..bar_count`의 빈틈없는 연속 정수여야 함을 강제합니다.
+  - 클라이언트에서 사용자가 구간 2번을 삭제하거나 마디 수를 늘렸다 줄였을 때 position 값이 하나라도 어긋나면 서버 저장 시 `VALIDATION_ERROR`가 발생합니다.
+- **해결**:
+  - 직렬화 유틸 `serializeProjectDraft`에서 전송 직전 무조건 `sections.map((s, idx) => ({ ...s, position: idx }))`로 0-based 재색인하고, 마디 역시 `bars.map((b, idx) => ({ ...b, position: idx + 1 }))`로 1-based 재색인하도록 구현했습니다.
+  - 마디 수가 줄어들었을 경우 초과 마디는 배제하고, 마디 수가 모자랄 경우 빈 마디(`chords: []`)로 자동 패딩하여 서버 검증을 100% 통과하도록 보장했습니다.
+
+### FE-W1-002: 클라이언트 임시 ID와 서버 AUTOINCREMENT PK의 조화
+- **문제**:
+  - 클라이언트에서 새로 추가한 구간/마디/코드는 아직 DB ID가 없으므로 React key 및 선택 식별자로 쓰일 임시 ID가 필요합니다.
+  - 저장이 완료되면 서버가 발급한 정수 ID로 갱신되어야 이후 개별 수정/조회 시 서버와 일치합니다.
+- **해결**:
+  - `createTempId()` (`sec_...`, `bar_...`, `chord_...`)를 도입하여 클라이언트 상에서 고유 키를 보장했습니다.
+  - `hydrateProjectDraft` 함수를 통해 서버 저장 결과(`PUT` 성공 응답)를 수신하면 모든 ID를 서버 ID 기반 문자열로 깔끔하게 re-hydrate하고 `isDirty`를 `false`로 리셋하도록 설계했습니다.
+
+### FE-W1-003: 4마디 추천 적용 시의 비파괴적(Non-destructive) 병합 보장
+- **문제**:
+  - 사용자가 1번 마디에 이미 `IV` 코드를 입력해 둔 상태에서 4마디 추천 진행(`I - V - VI - IV`)을 적용할 때, 1번 마디까지 덮어써지면 사용자 작업이 유실됩니다.
+- **해결**:
+  - `APPLY_RECOMMENDATION_BLOCK` 리듀서 액션에서 `bar.chords.length === 0`인 빈 마디에만 추천 코드를 `beat: 1`로 주입하고, 이미 코드가 있는 마디는 기존 입력을 온전히 보존하도록 필터링 로직을 구축했습니다.
+  - 단위 테스트(`test/draft-reducer.test.ts`)에서 1번 마디의 `IV`가 유지되고 2~4번 마디만 추천 코드로 채워짐을 검증했습니다.
+
+### FE-W1-004: 화면 표시 코드명(`displayName`)의 파생 상태(Derived State) 확립
+- **문제**:
+  - 조성을 C Major에서 G Major로 바꿨을 때, 상태에 `displayName: "C"`를 저장하고 있으면 모든 마디를 순회하며 상태를 갱신해야 하므로 Stale display 버그가 발생합니다.
+- **해결**:
+  - 초안 상태(`ProjectDraft`)에는 순수 음악 속성인 `{ degree, quality, extension, bass_degree }`만 보존하고, 화면 렌더링 시점에 공유 도메인 함수 `realizeChord(project.tonic, chord)`를 호출하여 파생 계산하도록 구현했습니다.
+  - 상단 Key 버튼 클릭 즉시 모든 마디의 표시 코드가 오차 없이 즉각 변환됩니다.
+
+### FE-W1-005: 마디 선택 후 코드 할당 (2-Step) 인터랙션 모델 확립
+- **문제 및 UX 결함 분석**:
+  - 빈 마디 클릭 시 1도 코드(C)가 즉시 자동 입력되거나, 이미 코드가 있는 마디 클릭 시 바로 토글 삭제되는 기존 방식은 사용자의 의도와 다른 원치 않는 코드가 주입되거나 마디 클릭 실수로 데이터가 유실될 위험이 큼.
+  - 사용자는 '어느 마디에 코드를 넣을 것인가'를 먼저 선택하고, 그 후 '어떤 코드를 넣을 것인가'를 선택하기를 기대함.
+- **해결 및 결정**:
+  1. **Step 1 (마디 선택/포커스)**:
+     - 코드 차트의 마디 클릭 시 코드가 즉시 변경되지 않고, 해당 마디를 `selectedChordTarget` (또는 `selectedBarPosition`)으로 지정하여 시각적으로 선택 강조(인디고 테두리/링 하이라이트) 상태로 전환.
+     - 이미 코드가 있는 마디 클릭 시에도 우선 선택 상태가 되어 상세 정보 확인 및 교체 준비 상태로 진입.
+  2. **Step 2 (코드 선택 및 할당)**:
+     - 마디가 선택된 상태에서 상단 다이어토닉 7코드 팔레트(`I` ~ `VII`) 클릭 또는 키보드 단축키(`1` ~ `7`), 또는 코드 속성 편집 팝오버를 통해 명시적으로 코드를 선택하여 할당.
+     - 마디가 선택되지 않은 상태에서 팔레트를 클릭할 경우 첫 번째 빈 마디를 자동 선택하거나 "먼저 마디를 선택하세요" 안내 피드백 제공.
+  3. **명시적 삭제 분리**:
+     - 마디 단순 클릭에 의한 삭제를 완전히 제거하고, 선택된 마디 내에 명시적으로 제공되는 [코드 삭제 / 비우기] 버튼을 통해서만 삭제를 수행하도록 분리.
+- **반영 파일**:
+  - `functional_specification.md` (FR-CODE-004)
+  - `fe-todo.md` (Phase 4 마디 인터랙션 & Phase 5 선택 기반 코드 할당)
+
+---
+
+## 3. 검증 결과 (Gate `[G1-FE]` 통과)
+
+- **타입 검사**: `npm run typecheck` 통과 (TypeScript 에러 0건)
+- **단위 테스트**: `npm test` 총 27개 테스트 전체 통과 (duration ~176ms)
+  - 기존 백엔드/도메인 테스트 18개 + 신규 프론트엔드 초안/직렬화 테스트 9개
+- **Next.js 프로덕션 빌드**: `npm run build` 통과 (컴파일 ~993ms)
+- **게이트 기준 통과 확인**:
+  - 메모리 상에서 프로젝트 생성, 메타데이터 수정, 송폼 구간 추가/삭제/순서변경, 마디 코드 입력/삭제, 추천 4마디 비파괴 병합, 조성 변경에 따른 실시간 코드명 재계산이 모두 정상 동작함을 확인했습니다.
+
+---
