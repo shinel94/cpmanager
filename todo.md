@@ -9,7 +9,9 @@
 
 ## 개발 원칙
 
-- Node.js 22+와 SQLite를 기준으로 개발한다.
+- Next.js App Router, TypeScript, Node.js 22+와 SQLite를 기준으로 개발한다.
+- Client UI와 Backend API는 하나의 Next.js 앱에서 제공한다.
+- UI는 `app/`과 React Component, Backend는 `app/api/**/route.ts`와 서버 전용 모듈로 구성한다.
 - 프론트엔드 없이 Node 내장 테스트와 HTTP API 테스트로 각 단계를 검증한다.
 - 프로젝트 편집은 클라이언트 초안으로 유지하고, 명시적인 전체 저장 요청에서만 SQLite에 반영한다.
 - 기본 추천 진행과 사용자 진행을 분리한다.
@@ -31,12 +33,14 @@
 
 선행 조건: 없음
 
-- `[P]` 서버 진입점·HTTP 라우팅 뼈대 작성
+- `[P]` Next.js App Router 프로젝트·TypeScript 설정
+- `[P]` App Router 레이아웃·기본 Client UI 셸 작성
+- `[P]` Route Handler API 라우팅 뼈대 작성
 - `[P]` SQLite 연결·DB 경로 모듈 작성
 - `[P]` `node:test` 테스트 러너와 테스트 DB 유틸리티 작성
 - `[P]` API 공통 응답·에러 형식 정의
 
-`[G0]` 서버 실행, 테스트 실행, 테스트 DB 생성·삭제가 모두 가능해야 한다.
+`[G0]` Next.js 앱 실행, 기본 UI 표시, Route Handler 호출, 테스트 실행, 테스트 DB 생성·삭제가 모두 가능해야 한다.
 
 ### Wave 1. 도메인·스키마·시드 기반
 
@@ -82,20 +86,21 @@
 
 `[G3]` 프로젝트 저장·롤백·CASCADE와 Meta API 통합 테스트가 통과해야 한다.
 
-### Wave 4. 프로젝트·조회 API
+### Wave 4. 프로젝트·조회 API·기본 UI
 
 선행 조건: `[G3]`
 
 - `[P]` 프로젝트 생성·목록·상세·삭제 API
 - `[P]` 명시적 전체 저장 `PUT /api/projects/:id`
 - `[P]` 송폼·코드 차트 조회 API
+- `[P]` 프로젝트 목록·송폼·조성 선택 기본 화면
 - `[P]` 프로젝트 API 오류·트랜잭션 테스트
 
-편집 mutation API는 만들지 않는다. 송폼·코드·추천 적용은 클라이언트 초안에서 처리한다.
+편집 mutation API는 만들지 않는다. 송폼·코드·추천 적용은 Client Component의 초안 상태에서 처리한다.
 
 `[G4]` 프로젝트 생성 → 조회 → 초안 payload 전체 저장 → 재조회 흐름이 API만으로 동작해야 한다.
 
-### Wave 5. 추천·기법·사용자 진행
+### Wave 5. 추천·기법·사용자 진행 UI/API
 
 선행 조건: `[G4]` 및 시스템 시드 데이터
 
@@ -105,6 +110,7 @@
 - `[P]` 기법 분석 API
 - `[P]` 사용자 진행 CRUD API
 - `[P]` 사용자 진행 와일드카드 검색 API
+- `[P]` 4마디 추천 패널·기법 분석 패널·사용자 진행 화면
 
 의존성:
 
@@ -134,23 +140,26 @@
 - 명시적 저장과 클라이언트 초안 경계가 변경 중인 경우
 - 시드 데이터 정규화 규칙이 확정되지 않은 경우
 
-## Phase 0. 실행 기반
+## Phase 0. Next.js 실행 기반
 
-목표: 백엔드 서버, 테스트 러너, SQLite 연결을 준비한다.
+목표: Next.js 전체 스택 앱, 테스트 러너, SQLite 연결을 준비한다.
 
 - [ ] Node.js 22+ 실행 버전 확인
+- [ ] Next.js App Router 프로젝트와 TypeScript 설정
 - [ ] 프로젝트의 `package.json`과 실행 스크립트 정의
 - [ ] `node:test` 기반 테스트 실행 명령 정의
-- [ ] HTTP 서버 진입점 작성
+- [ ] App Router 레이아웃과 기본 UI 페이지 작성
+- [ ] Route Handler 진입점 작성
 - [ ] SQLite 연결 모듈 작성
 - [ ] DB 경로와 환경 설정 정의
 - [ ] 외부 DB 연결 없이 로컬 DB 파일 생성 확인
-- [ ] `GET /api/health` 구현
+- [ ] `GET /api/health` Route Handler 구현
 - [ ] 서버 종료 시 SQLite 연결 정리
 
 완료 기준:
 
-- 서버가 로컬 포트에서 실행된다.
+- Next.js 앱이 로컬 포트에서 실행된다.
+- 브라우저에서 기본 UI가 표시된다.
 - `GET /api/health`가 서버·DB 상태를 반환한다.
 - 테스트 DB를 별도로 생성하고 삭제할 수 있다.
 

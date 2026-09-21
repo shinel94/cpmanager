@@ -3,7 +3,9 @@
 ## 1. 문서 개요
 
 - 문서 목적: MVP 개발을 위한 기능·데이터·처리 규칙 정의
-- 대상 시스템: Node.js 기반 로컬 웹 애플리케이션
+- 대상 시스템: Next.js App Router 기반 Node.js 로컬 웹 애플리케이션
+- Client UI: React Server Component 및 Client Component
+- Backend: Next.js Route Handler
 - 저장소: SQLite
 - 인증: 없음
 - 네트워크 서버: 외부 서버 없음
