@@ -10,7 +10,9 @@
 - 편집 중인 송폼·코드·추천 적용 결과는 클라이언트 초안으로 유지한다.
 - 프로젝트 데이터는 사용자가 명시적으로 저장할 때만 전체 PUT 트랜잭션으로 SQLite에 반영한다. 자동 저장은 하지 않는다.
 - Client UI와 Backend 기능은 하나의 Next.js 애플리케이션에서 제공한다.
-- UI는 App Router 페이지·Client Component로 구성하고, Backend API는 Route Handler로 구성한다.
+- 현재 프로젝트 루트의 `app/` 디렉터리 아래에 모든 애플리케이션 코드를 구현한다.
+- UI는 `app/`의 App Router 페이지·Client Component로 구성하고, Backend API는 `app/api/**/route.ts` Route Handler로 구성한다.
+- 도메인·DB·Repository 같은 서버 전용 모듈은 `app/lib/server/` 아래에 둔다.
 - 내부 데이터는 대문자 로마 숫자 도수와 코드 속성을 저장하고, 화면에는 선택한 장조 조성의 실제 코드로 표시한다.
 - 추천·기법 분석은 4마디·4코드 단위다.
 - 사용자 진행은 기본 추천 DB와 분리한다.
@@ -38,11 +40,35 @@ Next.js 기반 → 환경/스키마 → 조성·코드 변환 → 프로젝트 �
 - Next.js App Router 프로젝트 (TypeScript)
 - Node.js 22+ 실행 환경
 - SQLite 연결, 마이그레이션 실행
-- `app/` 페이지·레이아웃 기본 구조
+- 현재 폴더의 `app/` 페이지·레이아웃 기본 구조
 - `app/api/health/route.ts` 헬스체크 Route Handler
+- `app/lib/server/` 서버 전용 모듈 구조
 - 프론트엔드 없이 실행 가능한 API·도메인 테스트 기반
 
 완료 조건: Next.js 앱이 실행되고 DB 파일과 마이그레이션이 생성되며, `/api/health`와 기본 테스트가 통과한다.
+
+기본 디렉터리 구조:
+
+```text
+app/
+├── api/
+│   ├── health/route.ts
+│   ├── meta/
+│   ├── projects/
+│   ├── recommendations/
+│   ├── analysis/
+│   └── user-progressions/
+├── components/
+├── lib/
+│   └── server/
+│       ├── catalog/
+│       ├── domain/
+│       ├── db/
+│       ├── repositories/
+│       └── services/
+├── layout.tsx
+└── page.tsx
+```
 
 ---
 
@@ -423,7 +449,7 @@ technique_rules  (독립, 시드)
 
 ## 4. API 목록
 
-Next.js Route Handler 기반 로컬 REST. 인증 헤더 없음. JSON.
+현재 폴더의 `app/api/` 아래에 구현하는 Next.js Route Handler 기반 로컬 REST. 인증 헤더 없음. JSON.
 
 공통 에러 형식 예:
 

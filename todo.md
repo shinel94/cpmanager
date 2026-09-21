@@ -1,4 +1,4 @@
-# Chord Progression Manager Backend TODO
+# Chord Progression Manager Next.js Full-stack TODO
 
 개발 기준 문서:
 
@@ -11,7 +11,8 @@
 
 - Next.js App Router, TypeScript, Node.js 22+와 SQLite를 기준으로 개발한다.
 - Client UI와 Backend API는 하나의 Next.js 앱에서 제공한다.
-- UI는 `app/`과 React Component, Backend는 `app/api/**/route.ts`와 서버 전용 모듈로 구성한다.
+- 현재 프로젝트 루트의 `app/` 아래에 애플리케이션 코드를 구현한다.
+- UI는 `app/`과 React Component, Backend는 `app/api/**/route.ts`와 `app/lib/server/` 모듈로 구성한다.
 - 프론트엔드 없이 Node 내장 테스트와 HTTP API 테스트로 각 단계를 검증한다.
 - 프로젝트 편집은 클라이언트 초안으로 유지하고, 명시적인 전체 저장 요청에서만 SQLite에 반영한다.
 - 기본 추천 진행과 사용자 진행을 분리한다.
@@ -36,6 +37,7 @@
 - `[P]` Next.js App Router 프로젝트·TypeScript 설정
 - `[P]` App Router 레이아웃·기본 Client UI 셸 작성
 - `[P]` Route Handler API 라우팅 뼈대 작성
+- `[P]` `app/lib/server/` 서버 전용 모듈 구조 작성
 - `[P]` SQLite 연결·DB 경로 모듈 작성
 - `[P]` `node:test` 테스트 러너와 테스트 DB 유틸리티 작성
 - `[P]` API 공통 응답·에러 형식 정의
@@ -148,9 +150,10 @@
 - [ ] Next.js App Router 프로젝트와 TypeScript 설정
 - [ ] 프로젝트의 `package.json`과 실행 스크립트 정의
 - [ ] `node:test` 기반 테스트 실행 명령 정의
-- [ ] App Router 레이아웃과 기본 UI 페이지 작성
-- [ ] Route Handler 진입점 작성
-- [ ] SQLite 연결 모듈 작성
+- [ ] `app/layout.tsx`, `app/page.tsx` 기본 UI 페이지 작성
+- [ ] `app/api/health/route.ts` Route Handler 진입점 작성
+- [ ] `app/lib/server/` 서버 전용 모듈 구조 작성
+- [ ] `app/lib/server/db/` SQLite 연결 모듈 작성
 - [ ] DB 경로와 환경 설정 정의
 - [ ] 외부 DB 연결 없이 로컬 DB 파일 생성 확인
 - [ ] `GET /api/health` Route Handler 구현

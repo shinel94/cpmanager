@@ -6,6 +6,8 @@
 - 대상 시스템: Next.js App Router 기반 Node.js 로컬 웹 애플리케이션
 - Client UI: React Server Component 및 Client Component
 - Backend: Next.js Route Handler
+- 애플리케이션 코드 위치: 현재 프로젝트 루트의 `app/` 디렉터리
+- 서버 전용 모듈 위치: `app/lib/server/`
 - 저장소: SQLite
 - 인증: 없음
 - 네트워크 서버: 외부 서버 없음
@@ -454,7 +456,7 @@ x - x - x - x   -> 검색하지 않음
 - 코드 변경 기법을 확인할 수 있다.
 - 프로젝트를 수동 저장·불러오기·삭제할 수 있다.
 - 사용자 진행을 저장하고 4개 도수와 와일드카드로 검색할 수 있다.
-- Node.js 기반 로컬 환경에서 전체 흐름이 실행된다.
+- Next.js 기반 Node.js 로컬 환경에서 전체 흐름이 실행된다.
 
 ### 후속 기능 완료 조건
 
