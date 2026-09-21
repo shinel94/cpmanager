@@ -8,7 +8,9 @@
 - 인증: 없음
 - 네트워크 서버: 외부 서버 없음
 - 박자: 4/4 고정
-- 조성: 장조 선택만 지원
+- 조성: 12개 표준 장조 선택만 지원
+- 편집 상태: 클라이언트 초안
+- 프로젝트 DB 반영: 명시적 전체 저장 시에만 수행
 
 ## 2. 용어 정의
 
@@ -17,7 +19,7 @@
 | 프로젝트 | 사용자가 작성하는 한 곡의 전체 작업 단위 |
 | 송폼 | 곡을 구성하는 구간의 순서와 구간별 마디 수 |
 | 구간 | Intro, Verse, Chorus 등 곡의 구성 단위 |
-| 도수 | 조성 안에서 코드의 기능을 나타내는 값 |
+| 도수 | 조성 안에서 코드의 기능을 나타내는 대문자 로마 숫자 값 |
 | 코드 속성 | 화음 유형, 텐션, 베이스 등 도수 외의 코드 정보 |
 | 추천 블록 | 4마디·4코드로 구성된 추천 단위 |
 | 사용자 진행 | 사용자가 직접 저장한 4마디 도수 진행 |
@@ -51,6 +53,7 @@
 - 사용자가 저장 동작을 실행했을 때 프로젝트 정보를 SQLite에 저장한다.
 - 저장 대상은 프로젝트 메타데이터, 조성, 송폼, 마디, 코드 입력값이다.
 - 자동 저장은 제공하지 않는다.
+- 송폼·코드·추천 적용 결과는 클라이언트 초안으로 유지하며, 명시적 전체 저장 요청에서만 SQLite에 반영한다.
 - 저장 성공과 실패를 사용자에게 표시한다.
 
 ### FR-PROJ-004 프로젝트 목록
@@ -149,7 +152,7 @@
 - 우선순위: P0
 - 추천 블록은 정확히 4마디로 생성한다.
 - 각 마디에 코드가 1개인 경우에만 기본 추천 대상으로 한다.
-- 4마디 블록 안에 여러 코드가 있는 마디가 있으면 해당 마디의 자체 추천과 기법 분석을 제외한다.
+- 4마디 블록 안에 여러 코드가 있는 마디가 하나라도 있으면 해당 블록 전체를 추천에서 제외한다.
 
 ### FR-REC-002 추천 블록 범위 계산
 
@@ -163,10 +166,11 @@
 ### FR-REC-003 입력 조건 반영
 
 - 우선순위: P0
-- 사용자가 입력한 도수 또는 코드 속성과 일치하는 진행만 결과에 포함한다.
+- 사용자가 입력한 대문자 도수 또는 코드 속성과 일치하는 진행만 결과에 포함한다.
 - 기존 코드 입력값은 추천 적용 시 유지한다.
 - 4개 위치가 모두 입력된 경우 추천하지 않는다.
 - 조건에 맞는 진행이 없으면 `추천 없음`을 표시한다.
+- 복수 코드 마디가 포함된 블록은 `multi_chord_excluded` 상태로 표시한다.
 
 ### FR-REC-004 추천 정렬 기준
 
@@ -249,9 +253,9 @@
 예시:
 
 ```text
-저장: I - ii - I - I
-x - ii - I - x  -> 일치
-I - ii - x - x  -> 일치
+저장: I - II - I - I
+x - II - I - x  -> 일치
+I - II - x - x  -> 일치
 x - x - I - I   -> 일치
 I - I - x - x    -> 불일치
 x - x - x - x   -> 검색하지 않음
@@ -311,10 +315,10 @@ x - x - x - x   -> 검색하지 않음
 | id | 코드 입력 식별자 |
 | bar_id | 마디 ID |
 | beat | 1~4박 |
-| degree | 기능 도수 |
+| degree | 대문자 기능 도수 (I, II, V, bVI 등) |
 | quality | major, minor, diminished 등 |
 | extension | maj7, 7, m7, 9 등 |
-| bass_degree | 슬래시 코드 베이스 도수 |
+| bass_degree | 대문자 슬래시 베이스 도수 (예: VII) |
 
 ### system_recommendation_progressions
 
@@ -322,13 +326,21 @@ x - x - x - x   -> 검색하지 않음
 |---|---|
 | id | 추천 진행 식별자 |
 | name | 진행 이름 |
-| form_tags | 자주 사용된 송폼 |
 | description | 설명 |
 | popularity_score | 대중성 기준 |
 | connectivity_score | 연결성 기준 |
 | diversity_group | 다양성 그룹 |
 | priority | 추천·규칙 우선순위 |
 | created_at | 시스템 관리 시각 |
+
+### system_progression_form_tags
+
+| 필드 | 설명 |
+|---|---|
+| progression_id | 기본 추천 진행 ID |
+| form_tag | Intro, Verse, Pre-Chorus 등 |
+
+기본 키는 `(progression_id, form_tag)`로 한다.
 
 ### system_progression_steps
 
@@ -337,7 +349,7 @@ x - x - x - x   -> 검색하지 않음
 | id | 진행 단계 식별자 |
 | progression_id | 기본 추천 진행 ID |
 | position | 1~4 |
-| degree | 기능 도수 |
+| degree | 대문자 기능 도수 |
 | quality | 화음 유형 |
 | extension | 코드 확장 |
 | bass_degree | 베이스 도수 |
@@ -348,9 +360,17 @@ x - x - x - x   -> 검색하지 않음
 |---|---|
 | id | 사용자 진행 식별자 |
 | name | 진행 이름 |
-| form_tags | 자주 사용된 송폼 |
 | description | 설명 또는 메모 |
 | created_at | 시스템 관리 시각 |
+
+### user_progression_form_tags
+
+| 필드 | 설명 |
+|---|---|
+| progression_id | 사용자 진행 ID |
+| form_tag | 사용자가 선택한 송폼 |
+
+기본 키는 `(progression_id, form_tag)`로 한다.
 
 ### user_progression_steps
 
@@ -359,7 +379,7 @@ x - x - x - x   -> 검색하지 않음
 | id | 진행 단계 식별자 |
 | progression_id | 사용자 진행 ID |
 | position | 1~4 |
-| degree | 기능 도수 |
+| degree | 대문자 기능 도수 |
 | quality | 화음 유형 |
 | extension | 코드 확장 |
 | bass_degree | 베이스 도수 |
@@ -370,7 +390,8 @@ x - x - x - x   -> 검색하지 않음
 |---|---|
 | id | 규칙 식별자 |
 | name | 기법명 |
-| condition | 판별 조건 |
+| rule_type | 기법 유형 |
+| condition | 기법 유형별 구조화 JSON 판별 조건 |
 | description | 사용자 표시 설명 |
 | priority | 중복 시 우선순위 |
 | enabled | 사용 여부 |

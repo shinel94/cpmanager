@@ -7,10 +7,13 @@
 
 ## 1. 개발 원칙
 
-- 저장은 사용자가 명시적으로 실행한다. 자동 저장은 하지 않는다.
-- 내부 데이터는 도수·코드 속성을 저장하고, 화면에는 선택한 장조 조성의 실제 코드로 표시한다.
+- 편집 중인 송폼·코드·추천 적용 결과는 클라이언트 초안으로 유지한다.
+- 프로젝트 데이터는 사용자가 명시적으로 저장할 때만 전체 PUT 트랜잭션으로 SQLite에 반영한다. 자동 저장은 하지 않는다.
+- 내부 데이터는 대문자 로마 숫자 도수와 코드 속성을 저장하고, 화면에는 선택한 장조 조성의 실제 코드로 표시한다.
 - 추천·기법 분석은 4마디·4코드 단위다.
 - 사용자 진행은 기본 추천 DB와 분리한다.
+- 기본 추천 진행과 사용자 진행의 송폼 태그는 각각 별도 관계 테이블로 관리한다.
+- 코드 속성은 유한 카탈로그로 검증한다.
 - 단조 독립 선택, PDF/MIDI 내보내기, 재생, 계정은 MVP에서 제외한다.
 
 핵심 검증 기준: 빈 프로젝트에서 전형적 송폼의 첫 코드부터 마지막 코드까지 10분 안에 저장.
@@ -32,27 +35,30 @@
 
 - Node.js 로컬 서버 (Express 등)
 - SQLite 연결, 마이그레이션 실행
-- 정적 프론트 또는 단순 웹 화면 뼈대
+- 프론트엔드 없이 실행 가능한 API·도메인 테스트 기반
 - 헬스체크 `GET /api/health`
 
-완료 조건: 브라우저에서 로컬 앱이 열리고 DB 파일이 생성된다.
+완료 조건: 서버가 실행되고 DB 파일과 마이그레이션이 생성되며, 헬스체크와 기본 테스트가 통과한다.
 
 ---
 
 ### Phase 1. 스키마 · 시드 데이터
 
-목표: 기능 정의서의 9개 테이블을 만들고 추천·기법 초기 데이터를 넣는다.
+목표: 기능 정의서의 11개 테이블을 만들고, `progression/`의 160개 4마디 진행을 추천 DB에 넣는다.
 
 구현 순서:
 
 1. `projects`, `sections`, `bars`, `bar_chords`
 2. `system_recommendation_progressions`, `system_progression_steps`
-3. `technique_rules`
-4. `user_progressions`, `user_progression_steps`
-5. 장조 다이어토닉·전형적 진행 시드
-6. 모달 인터체인지·세컨더리 도미넌트 등 기법 규칙 시드
+3. `system_progression_form_tags`, `user_progression_form_tags`
+4. `technique_rules`
+5. `user_progressions`, `user_progression_steps`
+6. `node scripts/seed_system_progressions.js` 실행 (JSON → SQLite)
+7. 모달 인터체인지·세컨더리 도미넌트 등 기법 규칙 시드
 
-완료 조건: 빈 프로젝트 저장이 가능하고, 추천·기법 테이블에 초기 데이터가 있다.
+데이터 원본은 SQL이 아니라 `progression/progressions.json` ~ `progressions_5.json`이다. 시드 스크립트·작곡 활용은 [7장](#7-시스템-추천-데이터-적재와-작곡-활용)을 따른다.
+
+완료 조건: 마이그레이션이 11개 테이블을 생성하고, 추천 테이블에 160행·스텝 640행·송폼 태그 관계가 있으며 기법 규칙 시드가 유효하다.
 
 ---
 
@@ -62,12 +68,14 @@
 
 | 순서 | 기능 | FR |
 |---|---|---|
-| 1 | 장조 조성 목록 (C~B Major) | FR-CODE-001 |
-| 2 | 도수 + quality + extension + bass → 실제 코드명 | FR-CODE-005 |
+| 1 | 12개 표준 장조 조성 목록 및 혼합 표기 | FR-CODE-001 |
+| 2 | 대문자 로마 도수 + quality + extension + bass → 실제 코드명 | FR-CODE-005 |
 | 3 | 장조 다이어토닉 7코드 생성 | FR-CODE-002 |
 | 4 | 조성 변경 시 저장값은 유지, 표시만 재계산 | FR-CODE-005 |
 
-완료 조건: 같은 `I - V - vi - IV`가 C Major에서는 `C - G - Am - F`, G Major에서는 `G - D - Em - C`로 나온다.
+정규화 예시: `I - V - VI - IV`와 `quality=[major, major, minor, major]`를 사용한다. C Major에서는 `C - G - Am - F`, G Major에서는 `G - D - Em - C`로 표시한다. C Major의 `G/B`는 `degree=V`, `bass_degree=VII`로 저장한다.
+
+완료 조건: 12개 장조의 조성 목록·이명동음 표기·다이어토닉 변환과 코드 카탈로그 검증이 통과한다.
 
 ---
 
@@ -115,7 +123,7 @@
 | 6 | 차트에 실제 코드명 표시 | FR-CODE-005 |
 
 저장 필드: `degree`, `quality`, `extension`, `bass_degree`  
-복수 코드 마디는 이후 추천·기법 분석에서 해당 마디 자체를 제외한다.
+`degree`는 대문자 로마 숫자와 임시표만 사용하고, 화음 성격은 `quality`로 분리한다. 코드 속성은 유한 카탈로그로 검증한다. 복수 코드 마디는 이후 추천에서 포함된 4마디 블록 전체를 제외하고, 기법 분석에서는 기존 인접 코드 규칙을 적용한다.
 
 ---
 
@@ -126,7 +134,7 @@
 | 순서 | 기능 | FR |
 |---|---|---|
 | 1 | 구간을 겹치지 않는 4마디 블록으로 분할 | FR-REC-002 |
-| 2 | 1코드 마디만 추천 대상으로 표시 | FR-REC-001 |
+| 2 | 복수 코드 마디가 포함된 블록 전체를 추천 대상에서 제외 | FR-REC-001 |
 | 3 | 이미 입력된 위치와 일치하는 진행만 검색 | FR-REC-003 |
 | 4 | 정렬: 무작위 / 대중성 / 연결성 / 다양성 | FR-REC-004 |
 | 5 | 결과 3개 + 페이지네이션, 도수·실제코드 동시 표시 | FR-REC-005 |
@@ -141,6 +149,8 @@
 - 조건 불일치 → `추천 없음`
 
 사용자 진행은 이 결과에 넣지 않는다.
+
+추천 후보는 `progression/`에서 적재한 160개만 사용한다. 현재 구간명이 송폼 태그 관계 테이블에 연결된 진행을 먼저 보여주고, 도수 조건·정렬 기준(`popularity` / `connectivity` / `diversity` / `random`)을 적용한다. 복수 코드 마디가 포함된 블록은 `multi_chord_excluded`로 제외한다. 상세는 7장.
 
 ---
 
@@ -211,7 +221,7 @@ P2: BPM, MIDI 재생, 추천 데이터 보강, 설치형 데스크톱, 단조 �
 
 ## 3. 테이블 목록
 
-기능 정의서 10장의 9개 테이블이 전부다. 인증 테이블은 없다.
+기능 정의서 10장의 11개 테이블이 전부다. 인증 테이블은 없다.
 
 ### 3.1 ER 관계
 
@@ -219,7 +229,9 @@ P2: BPM, MIDI 재생, 추천 데이터 보강, 설치형 데스크톱, 단조 �
 projects 1 ── N sections 1 ── N bars 1 ── N bar_chords
 
 system_recommendation_progressions 1 ── N system_progression_steps   (항상 4행)
+system_recommendation_progressions 1 ── N system_progression_form_tags
 user_progressions                  1 ── N user_progression_steps     (항상 4행)
+user_progressions                  1 ── N user_progression_form_tags
 
 technique_rules  (독립, 시드)
 ```
@@ -272,10 +284,10 @@ technique_rules  (독립, 시드)
 | id | INTEGER | PK | 코드 입력 식별자 |
 | bar_id | INTEGER | NOT NULL FK → bars.id ON DELETE CASCADE | 마디 |
 | beat | INTEGER | NOT NULL CHECK 1~4 | 박 |
-| degree | TEXT | NOT NULL | 기능 도수 (I, ii, V, bVI …) |
+| degree | TEXT | NOT NULL | 대문자 기능 도수 (I, II, V, bVI …) |
 | quality | TEXT | NOT NULL | major, minor, diminished, dominant 등 |
 | extension | TEXT | NULL | maj7, 7, m7, 9 등 |
-| bass_degree | TEXT | NULL | 슬래시 베이스 도수 |
+| bass_degree | TEXT | NULL | 대문자 슬래시 베이스 도수 (예: VII) |
 
 권장 UNIQUE: `(bar_id, beat)`
 
@@ -287,13 +299,23 @@ technique_rules  (독립, 시드)
 |---|---|---|---|
 | id | INTEGER | PK | 추천 진행 식별자 |
 | name | TEXT | NOT NULL | 진행 이름 |
-| form_tags | TEXT | NULL | 자주 쓰인 송폼 (JSON 또는 콤마) |
 | description | TEXT | NULL | 설명 |
 | popularity_score | INTEGER | NOT NULL DEFAULT 0 | 대중성 |
 | connectivity_score | INTEGER | NOT NULL DEFAULT 0 | 연결성 |
 | diversity_group | TEXT | NULL | 다양성 그룹 |
 | priority | INTEGER | NOT NULL DEFAULT 0 | 추천 우선순위 |
 | created_at | TEXT | NOT NULL | 시스템 관리 시각 |
+
+#### `system_progression_form_tags`
+
+기본 추천 진행과 송폼의 다대다 관계. 진행별로 같은 태그를 중복 저장하지 않는다.
+
+| 컬럼 | 타입 제안 | 제약 | 설명 |
+|---|---|---|---|
+| progression_id | INTEGER | NOT NULL FK → system_recommendation_progressions.id ON DELETE CASCADE | 추천 진행 |
+| form_tag | TEXT | NOT NULL | Intro, Verse, Pre-Chorus 등 |
+
+권장 PRIMARY KEY: `(progression_id, form_tag)`
 
 #### `system_progression_steps`
 
@@ -321,9 +343,19 @@ technique_rules  (독립, 시드)
 |---|---|---|---|
 | id | INTEGER | PK | 사용자 진행 식별자 |
 | name | TEXT | NOT NULL | 진행 이름 |
-| form_tags | TEXT | NULL | 송폼 복수 선택 |
 | description | TEXT | NULL | 메모 |
 | created_at | TEXT | NOT NULL | 시스템 시각 |
+
+#### `user_progression_form_tags`
+
+사용자 진행과 송폼의 다대다 관계.
+
+| 컬럼 | 타입 제안 | 제약 | 설명 |
+|---|---|---|---|
+| progression_id | INTEGER | NOT NULL FK → user_progressions.id ON DELETE CASCADE | 사용자 진행 |
+| form_tag | TEXT | NOT NULL | 사용자가 선택한 송폼 |
+
+권장 PRIMARY KEY: `(progression_id, form_tag)`
 
 #### `user_progression_steps`
 
@@ -349,10 +381,27 @@ technique_rules  (독립, 시드)
 |---|---|---|---|
 | id | INTEGER | PK | 규칙 식별자 |
 | name | TEXT | NOT NULL | 기법명 |
-| condition | TEXT | NOT NULL | 판별 조건 (JSON 권장) |
+| rule_type | TEXT | NOT NULL | modal_interchange, secondary_dominant 등 |
+| condition | TEXT | NOT NULL | typed JSON 판별 조건 |
 | description | TEXT | NOT NULL | 사용자 표시 설명 |
 | priority | INTEGER | NOT NULL | 중복 시 우선순위 (높을수록 우선) |
 | enabled | INTEGER | NOT NULL DEFAULT 1 | 0/1 |
+
+`condition`은 `rule_type`에 따라 검증하는 구조화 JSON으로 저장한다. 예:
+
+```json
+{
+  "rule_type": "modal_interchange",
+  "condition": {
+    "before": { "degree": "IV", "quality": "major" },
+    "after": { "degree": "IV", "quality": "minor" },
+    "same_root_degree": true,
+    "within_block": true
+  }
+}
+```
+
+세컨더리 도미넌트는 목표 도수와 변경 코드의 dominant quality·7 extension·해결 관계를 조건으로 표현한다. 엔진은 `rule_type`별 JSON 스키마를 검증한 뒤 priority 순으로 평가한다.
 
 ### 3.6 테이블이 필요 없는 것
 
@@ -418,7 +467,6 @@ Phase 0 → 8 순으로 구현하면 된다.
 | API-PROJ-001 | GET | `/api/projects` | 목록. `?q=` 이름 검색 | FR-PROJ-004 |
 | API-PROJ-002 | POST | `/api/projects` | 생성 (name, tonic) | FR-PROJ-001 |
 | API-PROJ-003 | GET | `/api/projects/:id` | 상세 (송폼·마디·코드 포함) | FR-PROJ-005 |
-| API-PROJ-004 | PATCH | `/api/projects/:id` | 이름·조성 변경 | FR-PROJ-002, FR-CODE-001 |
 | API-PROJ-005 | PUT | `/api/projects/:id` | 수동 전체 저장 | FR-PROJ-003 |
 | API-PROJ-006 | DELETE | `/api/projects/:id` | 삭제 (확인은 UI) | FR-PROJ-006 |
 
@@ -435,7 +483,9 @@ Phase 0 → 8 순으로 구현하면 된다.
 - bars (position)
 - bar_chords (beat, degree, quality, extension, bass_degree)
 
-`updated_at`은 이 PUT에서만 갱신한다.
+`updated_at`은 이 PUT에서만 갱신한다. POST는 명시적인 새 프로젝트 생성 행위로 빈 프로젝트 행을 생성하며, 이후 편집값은 클라이언트 초안으로 유지한다.
+
+전체 저장은 `projects` 메타데이터, sections, bars, bar_chords를 하나의 SQLite 트랜잭션으로 처리한다. 어느 단계에서든 검증 또는 저장 오류가 발생하면 전체 변경을 롤백한다.
 
 검증:
 
@@ -449,19 +499,9 @@ Phase 0 → 8 순으로 구현하면 된다.
 
 ### 4.4 송폼 — Phase 4
 
-전체 저장(PUT 프로젝트)만 써도 되지만, 편집 중 즉시 반영이 필요하면 아래를 둔다.  
-MVP는 메모리에서 편집 후 `PUT /api/projects/:id` 한 번에 저장해도 충분하다.
+송폼 추가·수정·순서 변경·삭제는 클라이언트 초안에서 처리한다. MVP에는 개별 송폼 mutation API를 두지 않는다. 사용자가 저장할 때 `PUT /api/projects/:id`가 전체 송폼을 검증하고 저장한다.
 
-| ID | Method | Path | 설명 | 관련 FR |
-|---|---|---|---|---|
-| API-FORM-001 | POST | `/api/projects/:id/sections` | 구간 추가 | FR-FORM-001 |
-| API-FORM-002 | PATCH | `/api/sections/:sectionId` | 이름·마디 수 변경 | FR-FORM-003 |
-| API-FORM-003 | PUT | `/api/projects/:id/sections/reorder` | 순서 변경 | FR-FORM-002 |
-| API-FORM-004 | DELETE | `/api/sections/:sectionId` | 구간 삭제 | FR-FORM-004 |
-
-`PUT .../reorder` 요청: `{ "sectionIds": [3, 1, 2] }`
-
-마디 수가 줄면 초과 `bars`/`bar_chords`를 삭제한다. 늘면 빈 `bars`를 추가한다.
+저장 시 마디 수가 줄면 초과 `bars`/`bar_chords`를 삭제하고, 늘면 빈 `bars`를 추가한다. 이 작업은 전체 저장 트랜잭션 안에서 처리한다.
 
 ---
 
@@ -470,21 +510,8 @@ MVP는 메모리에서 편집 후 `PUT /api/projects/:id` 한 번에 저장해�
 | ID | Method | Path | 설명 | 관련 FR |
 |---|---|---|---|---|
 | API-CHART-001 | GET | `/api/projects/:id/chart` | 구간·마디·코드 + 표시 코드명 | FR-CODE-004, 005 |
-| API-CHART-002 | PUT | `/api/bars/:barId/chords` | 해당 마디 1~4박 코드 덮어쓰기 | FR-CODE-004 |
-| API-CHART-003 | DELETE | `/api/bars/:barId/chords/:beat` | 특정 박 코드 삭제 | FR-CODE-004 |
 
-`PUT /api/bars/:barId/chords` 요청:
-
-```json
-{
-  "chords": [
-    { "beat": 1, "degree": "I", "quality": "major", "extension": null, "bass_degree": null }
-  ]
-}
-```
-
-빈 배열이면 마디의 코드를 모두 지운다.  
-차트 조회 응답의 각 코드에 `displayName` (예: `"G7"`)을 포함한다.
+코드 차트 편집은 클라이언트 초안에서 수행한다. 차트 조회 응답의 각 코드에는 `displayName` (예: `"G7"`)을 포함할 수 있다. 코드 변경 결과는 최종 `PUT /api/projects/:id` 요청에 포함한다.
 
 ---
 
@@ -494,7 +521,6 @@ MVP는 메모리에서 편집 후 `PUT /api/projects/:id` 한 번에 저장해�
 |---|---|---|---|---|
 | API-REC-001 | GET | `/api/projects/:id/sections/:sectionId/blocks` | 추천 가능한 4마디 블록 목록 | FR-REC-001, 002 |
 | API-REC-002 | POST | `/api/recommendations` | 조건에 맞는 추천 검색 | FR-REC-003~005 |
-| API-REC-003 | POST | `/api/recommendations/apply` | 선택한 진행을 블록에 적용 | FR-REC-005 |
 
 `POST /api/recommendations` 요청:
 
@@ -514,12 +540,20 @@ MVP는 메모리에서 편집 후 `PUT /api/projects/:id` 한 번에 저장해�
 서버 처리:
 
 1. 블록 4마디의 코드 개수 확인
-2. 복수 코드 마디·이미 찬 위치 확인
+2. 복수 코드 마디가 하나라도 있으면 `multi_chord_excluded` 반환
 3. 4칸 모두 입력이면 빈 결과
-4. `system_*`만 조회 (user 진행 제외)
-5. 입력된 위치의 degree/quality 등과 일치하는 행만
-6. sort 적용, pageSize만큼 반환
-7. 각 결과에 도수 진행 + 현재 조성 실제 코드 포함
+4. `system_*`만 조회 (user 진행 제외). 원본은 `progression/*.json` 160선
+5. 입력된 위치의 대문자 degree와 코드 속성 조건을 비교
+6. 현재 구간명이 관계 테이블에 연결된 진행을 우선. 부족하면 도수 조건만으로 보완
+7. sort 적용 후 pageSize만큼 반환
+8. 각 결과에 도수 진행 + 현재 조성 실제 코드 + `diversity_group` 포함
+
+정렬:
+
+- `popularity` → `popularity_score DESC, priority DESC, id`
+- `connectivity` → `connectivity_score DESC, priority DESC, id`
+- `diversity` → 서로 다른 `diversity_group`을 돌아가며 선택
+- `random` → 조건 통과 집합을 셔플
 
 응답 예:
 
@@ -529,12 +563,15 @@ MVP는 메모리에서 편집 후 `PUT /api/projects/:id` 한 번에 저장해�
   "emptyReason": null,
   "items": [
     {
-      "id": 10,
-      "name": "I-V-vi-IV",
+      "id": 1,
+      "name": "I - V - VI - IV (팝 4코드 진행)",
+      "diversityGroup": "diatonic_pop",
+      "formTags": ["Chorus", "Intro", "Outro"],
+      "description": "전 세계 수많은 메가 히트 팝의 후렴 진행",
       "steps": [
         { "position": 1, "degree": "I", "quality": "major", "displayName": "C" },
         { "position": 2, "degree": "V", "quality": "major", "displayName": "G" },
-        { "position": 3, "degree": "vi", "quality": "minor", "displayName": "Am" },
+        { "position": 3, "degree": "VI", "quality": "minor", "displayName": "Am" },
         { "position": 4, "degree": "IV", "quality": "major", "displayName": "F" }
       ]
     }
@@ -546,18 +583,7 @@ MVP는 메모리에서 편집 후 `PUT /api/projects/:id` 한 번에 저장해�
 
 `emptyReason`: `null` | `too_short` | `all_filled` | `no_match` | `multi_chord_excluded`
 
-`POST /api/recommendations/apply` 요청:
-
-```json
-{
-  "projectId": 1,
-  "sectionId": 2,
-  "blockStart": 1,
-  "progressionId": 10
-}
-```
-
-이미 있는 칸은 덮어쓰지 않는다. 빈 칸만 채운다.
+추천 적용은 클라이언트가 응답의 4개 스텝을 현재 초안에 병합한다. 이미 있는 칸은 덮어쓰지 않고 빈 칸만 채운다. DB 저장은 최종 `PUT /api/projects/:id`에서만 수행한다.
 
 ---
 
@@ -624,7 +650,7 @@ MVP는 메모리에서 편집 후 `PUT /api/projects/:id` 한 번에 저장해�
   "description": "후렴 앞",
   "steps": [
     { "position": 1, "degree": "I", "quality": "major" },
-    { "position": 2, "degree": "ii", "quality": "minor" },
+    { "position": 2, "degree": "II", "quality": "minor" },
     { "position": 3, "degree": "I", "quality": "major" },
     { "position": 4, "degree": "I", "quality": "major" }
   ]
@@ -636,7 +662,7 @@ MVP는 메모리에서 편집 후 `PUT /api/projects/:id` 한 번에 저장해�
 `POST /api/user-progressions/search` 요청:
 
 ```json
-{ "tokens": ["x", "ii", "I", "x"] }
+{ "tokens": ["x", "II", "I", "x"] }
 ```
 
 - `tokens.length !== 4` → 400
@@ -651,10 +677,10 @@ MVP는 메모리에서 편집 후 `PUT /api/projects/:id` 한 번에 저장해�
 |---|---|
 | 프로젝트 목록 | API-PROJ-001, 002, 006 |
 | 곡 불러오기 | API-PROJ-003 |
-| 송폼 편집 | API-FORM-001~004 또는 로컬 편집 후 API-PROJ-005 |
-| 조성 선택 | API-META-002, API-PROJ-004, API-META-005, API-META-006 |
-| 코드 차트 | API-CHART-001~003, API-META-004 |
-| 4마디 추천 | API-REC-001~003 |
+| 송폼 편집 | 클라이언트 초안 후 API-PROJ-005 |
+| 조성 선택 | API-META-002, API-META-005, API-META-006 |
+| 코드 차트 | API-CHART-001, API-META-004 |
+| 4마디 추천 | API-REC-001~002 |
 | 기법 분석 | API-ANA-001 |
 | 사용자 진행 | API-USER-001~005 |
 | 수동 저장 | API-PROJ-005 |
@@ -665,11 +691,182 @@ MVP는 메모리에서 편집 후 `PUT /api/projects/:id` 한 번에 저장해�
 
 | 스프린트 | Phase | 산출물 |
 |---|---|---|
-| S0 | 0~1 | 서버, SQLite 9테이블, 시드 |
+| S0 | 0~1 | 서버, SQLite 11테이블, `seed_system_progressions.js`로 160선 적재 |
 | S1 | 2~3 | 변환 엔진, 프로젝트 CRUD |
 | S2 | 4~5 | 송폼, 코드 차트, 실제 코드 표시 |
-| S3 | 6 | 4마디 추천 + 적용 |
+| S3 | 6 | 송폼·도수 조건 추천 + 차트 적용 |
 | S4 | 7~8 | 기법 분석, 사용자 진행 검색 |
 | S5 | 9 | 화면 다듬기, 10분 완성 테스트 |
 
-한 줄 요약: **변환 엔진 → 프로젝트/송폼/차트 저장 → 추천 → 기법 → 사용자 검색** 순으로 만든다.
+한 줄 요약: **변환 엔진 → 프로젝트/송폼/차트 저장 → progression 시드 추천 → 기법 → 사용자 검색** 순으로 만든다.
+
+---
+
+## 7. 시스템 추천 데이터 적재와 작곡 활용
+
+`progression/`의 4마디 진행 160선을 SQLite에 넣고, 송폼·조성·부분 입력에 맞춰 추천한다.
+
+### 7.1 원본 파일
+
+JSON이 정본이다. `seed_progressions*.sql`은 참고용 덤프다.
+
+| 배치 | 파일 | ID | 작곡에서 쓰는 역할 |
+|---|---|---|---|
+| 1 | `progression/progressions.json` | 1–32 | 팝 4코드, 왕도, 캐논, 둘룹 등 입문자 기본 팔레트 |
+| 2 | `progression/progressions_2.json` | 33–64 | 시티팝 2-5, 안달루시아, 세컨더리 도미넌트, K-Pop 후렴 |
+| 3 | `progression/progressions_3.json` | 65–96 | 캐논 베이스 하강, 라인 클리셰, 모달 애니송, 발라드 빌드업 |
+| 4 | `progression/progressions_4.json` | 97–128 | 텐션 턴, iv 종지, 페달, 간주·후주 |
+| 5 | `progression/progressions_5.json` | 129–160 | J-Rock / 애니송 / 보컬로이드 (마루사, 코무로, 패싱 디미니시) |
+
+한 행은 항상 스텝 4개(`position` 1–4)다. 코드는 조성이 아니라 도수·quality·extension·bass_degree로 저장한다.
+
+송폼 태그 중복 허용 건수(160선 기준): Verse 72, Chorus 66, Bridge 46, Pre-Chorus 41, Intro 36, Outro 24, Interlude 19.
+
+### 7.2 적재 스크립트
+
+경로: `scripts/seed_system_progressions.js`
+
+```bash
+node scripts/seed_system_progressions.js --dry-run
+node scripts/seed_system_progressions.js
+node scripts/seed_system_progressions.js --db data/cpmanager.sqlite
+```
+
+기본 DB는 `data/cpmanager.sqlite`다. Node 22+ `node:sqlite`를 쓴다. 외부 npm 패키지는 없다.
+
+동작:
+
+1. JSON 5개를 읽고 id·name·form_tags·점수·priority·steps(4개)를 검증한다.
+2. 모든 `degree`를 대문자 로마 숫자와 임시표 형식으로 정규화하고, quality·extension·bass_degree를 카탈로그로 검증한다.
+3. 구간명은 Intro / Verse / Pre-Chorus / Chorus / Interlude / Bridge / Outro만 허용한다.
+4. 테이블이 없으면 `system_recommendation_progressions`, `system_progression_steps`, `system_progression_form_tags`를 만든다.
+5. 트랜잭션으로 UPSERT한다. 같은 id는 진행 메타데이터를 갱신하고 스텝·태그를 삭제한 뒤 4행과 관계를 다시 넣는다.
+6. `form_tags[]`는 `system_progression_form_tags`에 행 단위로 저장한다.
+
+적재 후 확인:
+
+```sql
+SELECT COUNT(*) FROM system_recommendation_progressions; -- 160
+SELECT COUNT(*) FROM system_progression_steps;           -- 640
+SELECT p.id, p.name, p.diversity_group, p.popularity_score, p.priority
+FROM system_recommendation_progressions p
+JOIN system_progression_form_tags t ON t.progression_id = p.id
+WHERE t.form_tag = 'Chorus'
+ORDER BY popularity_score DESC, priority DESC
+LIMIT 5;
+```
+
+앱 기동 시 추천 테이블이 비어 있으면 이 스크립트를 한 번 실행한다. 사용자 곡·사용자 진행은 건드리지 않는다.
+
+JSON 필드 → 테이블:
+
+| JSON | 테이블.컬럼 |
+|---|---|
+| `id`, `name`, `description` | `system_recommendation_progressions` |
+| `form_tags[]` | `system_progression_form_tags` 여러 행 |
+| `popularity_score` | 대중성 정렬 |
+| `connectivity_score` | 연결성 정렬 |
+| `diversity_group` | 다양성 그룹 로테이션 |
+| `priority` | 동점 시 우선순위 (10이 최우선) |
+| `steps[]` | `system_progression_steps` 4행 |
+
+### 7.3 작곡 기능에서 이 데이터를 쓰는 방법
+
+시나리오 A(새 곡)의 핵심이다. 사용자는 이론을 몰라도 송폼만 고르면 4마디씩 채워 한 곡을 만든다.
+
+#### (1) 송폼에 맞는 팔레트
+
+구간을 고르면 `system_progression_form_tags`에 그 이름이 연결된 진행을 먼저 추천한다.
+
+| 구간 | 데이터에서 우선하는 성격 | 예시 |
+|---|---|---|
+| Intro | 테마·뱀프 | I–V–VI–IV, I–IV–I–IV |
+| Verse | 반복 가능한 안정 진행 | 캐논 전반, 50s 둘룹, 2–5–1 |
+| Pre-Chorus | 상행·텐션 빌드 | II–III–IV–V, IV–V–IV–V |
+| Chorus | 캐치한 후렴 | 팝 4코드, 왕도, VI–IV–I–V |
+| Bridge | 색 바꾸기 (MI, SD) | IV–iv–I, bVI–bVII–I, III7 |
+| Interlude | 그루브·턴어라운드 | II–V–III–VI |
+| Outro | 종지·페이드 | IV–V–I–I, IV–iv–I–I |
+
+1차 필터: 구간명과 태그 관계가 일치하고 이미 입력한 대문자 도수·코드 속성과 일치.  
+후보가 `pageSize`보다 적으면 구간 태그는 무시하고 도수 조건만 쓴다. 없는 진행을 만들어 내지 않는다.
+
+#### (2) 부분 입력 유지
+
+예: Chorus 1~4마디에 첫 칸만 `I`를 넣은 경우.
+
+- 1번 스텝이 `I`인 진행만 남긴다 (팝 4코드, 캐논, 50s 둘룹 등).
+- 왕도(`IV` 시작)는 빠진다.
+- 적용 시 1번 칸은 그대로 두고 2~4만 채운다.
+
+4칸이 모두 차면 추천하지 않는다. 빈 블록이면 송폼 우선 목록 전체를 정렬해 보여 준다.
+
+#### (3) 조성 변환
+
+DB에는 대문자 도수와 `quality`가 함께 있다. 화면에는 현재 `tonic`으로 바꾼 코드명을 붙인다.
+
+- C Major + ID 1 → `C – G – Am – F`
+- G Major + ID 1 → `G – D – Em – C`
+- C Major + ID 8 (`III7`) → `F – G – E7 – Am`
+- C Major + ID 15 (`V`, `bass_degree: "VII"`) → `C – G/B – Am – G`
+
+저장은 항상 도수다. 조를 바꿔도 프로젝트 코드 행은 다시 쓰지 않는다.
+
+#### (4) 추천 기준 4종
+
+| UI 기준 | 데이터 필드 | 작곡 효과 |
+|---|---|---|
+| 대중성 우선 | `popularity_score`, `priority` | 입문자에게 익숙한 후렴·절부터 |
+| 코드 연결성 우선 | `connectivity_score` | 앞뒤 화성 흐름이 자연스러운 블록 |
+| 다양성 우선 | `diversity_group` | 같은 왕도만 반복하지 않음 |
+| 무작위 | 조건 통과 집합 셔플 | 익숙한 진행에서 벗어나기 |
+
+다양성: 직전 페이지에 쓴 그룹(`diatonic_pop`, `royal_road`, `modal_interchange`, `secondary_dominant`, `marunouchi_jrock` 등)을 피하고 다른 그룹에서 고른다.
+
+#### (5) 곡 전체를 4마디 블록으로 조립
+
+8마디 Chorus는 1~4와 5~8을 따로 추천한다. 예:
+
+1. Verse 8마디 → 캐논(ID 5) + 둘룹(ID 11)
+2. Pre-Chorus 4마디 → 상행 빌드(ID 4)
+3. Chorus 8마디 → 팝 4코드(ID 1) 두 번, 또는 왕도(ID 2)로 대비
+4. Bridge 4마디 → `IV–iv–I–I`(ID 14) 또는 마루사(ID 129)
+
+입문자는 추천 적용만 반복해 전형적 송폼을 10분 안에 채울 수 있다.
+
+#### (6) 기법 분석과 맞물림
+
+시드에 이미 변형 진행이 있다. 사용자가 차트에서 코드를 바꾸면 `technique_rules`가 이름을 붙인다.
+
+| 원형 | 변형 | 안내할 기법 |
+|---|---|---|
+| ID 2 `IV–V–III–VI` | ID 8 `IV–V–III–VI` + dominant 7 | 세컨더리 도미넌트 |
+| ID 16 `IV–V–I–I` | ID 14 `IV–IV–I–I` + minor quality | 모달 인터체인지 (iv) |
+| ID 1 `I–V–VI–IV` | ID 15 `I–V/VII–VI–V` | 슬래시·하강 베이스 |
+| 다이어토닉 III | `III7`, `VI7`, `II7` | 세컨더리 도미넌트 |
+| 다이어토닉 V | `V` + minor quality, `bVI`, `bVII` | 모달 인터체인지 |
+
+추천은 후보를 주고, 기법은 수정 의미를 설명한다. 추천 API는 `system_*`만, 사용자 진행 API는 `user_*`만 본다.
+
+#### (7) 화면 표시
+
+추천 카드 한 장:
+
+- 도수: `I – V – VI – IV` (quality로 장·단 구분)
+- 실제 코드: `C – G – Am – F` (현재 조성)
+- 이름·한 줄 설명 (`description`)
+- 송폼 태그, 다양성 그룹
+- [적용] → 현재 4마디 빈 칸에 `system_progression_steps`를 `bar_chords`로 복사
+
+`추천 없음`은 데이터가 부족해서가 아니라 블록이 너무 짧거나, 4칸이 찼거나, 입력 도수와 160선이 안 맞을 때다.
+
+### 7.4 Phase 6 구현 순서 (데이터 기준)
+
+1. 시드 스크립트로 160선 적재
+2. 구간명 + 4마디 블록 + 부분 도수 조건 조회
+3. 네 가지 정렬
+4. `realize`로 실제 코드명 첨부
+5. 적용 결과는 클라이언트 초안에 병합하고, 최종 저장 시 빈 마디에만 degree/quality/extension/bass_degree를 기록
+6. 송폼이 다른 구간(Verse vs Chorus vs Bridge)에서 추천 집합이 달라지는지 확인
+
+이 데이터가 있어야 10분 완성 지표를 검증할 수 있다.
