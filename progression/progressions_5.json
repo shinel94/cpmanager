@@ -1,0 +1,514 @@
+[
+  {
+    "id": 129,
+    "name": "IVmaj7 - III7 - vi7 - I7 (마루사 진행 / Just The Two of Us)",
+    "form_tags": ["Chorus", "Verse", "Intro"],
+    "description": "시이나 링고의 '마루노우치 새디스틱'으로 대표되며 요아소비, 요루시카, 킹누 등 J-Rock/시티록의 상징인 최고 인기 진행",
+    "popularity_score": 98,
+    "connectivity_score": 96,
+    "diversity_group": "marunouchi_jrock",
+    "priority": 10,
+    "steps": [
+      { "position": 1, "degree": "IV", "quality": "major", "extension": "maj7", "bass_degree": null },
+      { "position": 2, "degree": "III", "quality": "dominant", "extension": "7", "bass_degree": null },
+      { "position": 3, "degree": "vi", "quality": "minor", "extension": "7", "bass_degree": null },
+      { "position": 4, "degree": "I", "quality": "dominant", "extension": "7", "bass_degree": null }
+    ]
+  },
+  {
+    "id": 130,
+    "name": "IVmaj7 - III7 - vi7 - Vm7 (마루사 5도 마이너 변형)",
+    "form_tags": ["Chorus", "Bridge"],
+    "description": "요아소비 '밤을 달리다' 등에서 4번째 마디에 5도 마이너(Vm7) 모달 차용을 투입해 도시적인 세련됨과 아련함을 배가한 진행",
+    "popularity_score": 96,
+    "connectivity_score": 94,
+    "diversity_group": "marunouchi_jrock",
+    "priority": 10,
+    "steps": [
+      { "position": 1, "degree": "IV", "quality": "major", "extension": "maj7", "bass_degree": null },
+      { "position": 2, "degree": "III", "quality": "dominant", "extension": "7", "bass_degree": null },
+      { "position": 3, "degree": "vi", "quality": "minor", "extension": "7", "bass_degree": null },
+      { "position": 4, "degree": "v", "quality": "minor", "extension": "7", "bass_degree": null }
+    ]
+  },
+  {
+    "id": 131,
+    "name": "vi - IV - V - iii (코무로 진행 원형)",
+    "form_tags": ["Chorus", "Verse"],
+    "description": "90-00년대 J-Rock/J-Pop의 황금기를 이끈 코무로 테츠야의 시그니처로, 슬프면서도 강한 질주감을 뿜어내는 진행",
+    "popularity_score": 94,
+    "connectivity_score": 93,
+    "diversity_group": "komuro_jrock",
+    "priority": 9,
+    "steps": [
+      { "position": 1, "degree": "vi", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "V", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "iii", "quality": "minor", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 132,
+    "name": "IV - V - bVI - bVII (왕도 출발 모달 폭발 사비)",
+    "form_tags": ["Chorus", "Pre-Chorus"],
+    "description": "보컬로이드 및 초고속 J-Rock 밴드곡에서 후렴 후반부에 bVI-bVII 모달 인터체인지로 폭발적 에너지를 터뜨리는 진행",
+    "popularity_score": 95,
+    "connectivity_score": 92,
+    "diversity_group": "vocaloid_speed",
+    "priority": 10,
+    "steps": [
+      { "position": 1, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "V", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "bVI", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "bVII", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 133,
+    "name": "IV - #IVdim - V - vi (상행 패싱 디미니시 왕도)",
+    "form_tags": ["Chorus", "Pre-Chorus"],
+    "description": "4도와 5도 사이에 #IVdim 경과 화음을 넣어 드라마틱한 감정의 굴곡과 반음 상행의 쾌감을 선사하는 정통 애니송 기법",
+    "popularity_score": 93,
+    "connectivity_score": 94,
+    "diversity_group": "passing_diminished",
+    "priority": 9,
+    "steps": [
+      { "position": 1, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "#IV", "quality": "diminished", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "V", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "vi", "quality": "minor", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 134,
+    "name": "vi - IV - V - vi (코무로 다크 질주 루프)",
+    "form_tags": ["Verse", "Chorus", "Intro"],
+    "description": "마이너에서 출발해 1도로 해결하지 않고 다시 vi도로 되돌아와 끝없는 어둠의 질주감을 만들어내는 카게프로/록 테마",
+    "popularity_score": 92,
+    "connectivity_score": 91,
+    "diversity_group": "komuro_jrock",
+    "priority": 9,
+    "steps": [
+      { "position": 1, "degree": "vi", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "V", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "vi", "quality": "minor", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 135,
+    "name": "IV - V - iii - VI7 (왕도 진행 6도 세컨더리 도미넌트)",
+    "form_tags": ["Chorus", "Bridge"],
+    "description": "요네즈 켄시 등 현대 J-Rock 명곡에서 마지막에 VI7(V/ii)을 투입해 화려하고 세련된 전환감을 주는 왕도 진행",
+    "popularity_score": 91,
+    "connectivity_score": 95,
+    "diversity_group": "royal_road",
+    "priority": 9,
+    "steps": [
+      { "position": 1, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "V", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "iii", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "VI", "quality": "dominant", "extension": "7", "bass_degree": null }
+    ]
+  },
+  {
+    "id": 136,
+    "name": "I - III7 - IV - iv (드라마틱 J-Rock 록 발라드)",
+    "form_tags": ["Verse", "Chorus"],
+    "description": "원 오크 록, 엑스 재팬, 래드윔프스 등 록 발라드의 클라이맥스에서 눈물샘을 폭발시키는 비장미의 결정체",
+    "popularity_score": 92,
+    "connectivity_score": 90,
+    "diversity_group": "secondary_dominant",
+    "priority": 9,
+    "steps": [
+      { "position": 1, "degree": "I", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "III", "quality": "dominant", "extension": "7", "bass_degree": null },
+      { "position": 3, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "iv", "quality": "minor", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 137,
+    "name": "bVI - bVII - vi - I (보컬로이드 서정 질주 후렴)",
+    "form_tags": ["Chorus", "Bridge"],
+    "description": "DECO*27, Neru 등 보컬로이드 히트곡에서 빠른 BPM과 함께 가슴을 울리는 서정적 멜로디를 받쳐주는 사비 진행",
+    "popularity_score": 90,
+    "connectivity_score": 89,
+    "diversity_group": "vocaloid_speed",
+    "priority": 9,
+    "steps": [
+      { "position": 1, "degree": "bVI", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "bVII", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "vi", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "I", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 138,
+    "name": "IV - III7 - vi - bVII (마루사 믹솔리디안 회귀)",
+    "form_tags": ["Chorus", "Verse"],
+    "description": "마루사 진행의 4번째 마디에 bVII를 투입하여 록적인 에지와 블루지한 매력을 더한 킹누/오피셜히게단디즘풍 진행",
+    "popularity_score": 93,
+    "connectivity_score": 91,
+    "diversity_group": "marunouchi_jrock",
+    "priority": 9,
+    "steps": [
+      { "position": 1, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "III", "quality": "dominant", "extension": "7", "bass_degree": null },
+      { "position": 3, "degree": "vi", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "bVII", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 139,
+    "name": "vi - V - IV - iii (서정적 마이너 하강 J-Rock 절)",
+    "form_tags": ["Verse", "Intro"],
+    "description": "스피츠, 범프 오브 치킨 등 일본 청춘 록 밴드들의 절(Verse)에서 맑고 투명한 일렉기타 아르페지오와 어우러지는 진행",
+    "popularity_score": 89,
+    "connectivity_score": 92,
+    "diversity_group": "descending_line",
+    "priority": 8,
+    "steps": [
+      { "position": 1, "degree": "vi", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "V", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "iii", "quality": "minor", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 140,
+    "name": "IV - V - vi - #Vdim (상행 디미니시 턴어라운드)",
+    "form_tags": ["Pre-Chorus", "Chorus"],
+    "description": "vi도에 도달한 후 #Vdim을 통해 다시 vi의 긴장감을 극대화하며 프레이즈를 끈끈하게 엮어주는 재지 J-Rock 기법",
+    "popularity_score": 88,
+    "connectivity_score": 93,
+    "diversity_group": "passing_diminished",
+    "priority": 8,
+    "steps": [
+      { "position": 1, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "V", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "vi", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "#V", "quality": "diminished", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 141,
+    "name": "IV - iv - iii - VI7 (서브도미넌트 마이너 6도 도미넌트)",
+    "form_tags": ["Chorus", "Bridge"],
+    "description": "왕도 진행의 2번째 순환에서 iv와 VI7을 연달아 사용하여 듣는 이의 감정을 뒤흔드는 J-Rock 특유의 편곡 기법",
+    "popularity_score": 91,
+    "connectivity_score": 92,
+    "diversity_group": "modal_interchange",
+    "priority": 9,
+    "steps": [
+      { "position": 1, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "iv", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "iii", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "VI", "quality": "dominant", "extension": "7", "bass_degree": null }
+    ]
+  },
+  {
+    "id": 142,
+    "name": "vi - V - #IVø - IV (하강 하프 디미니시 베이스 라인)",
+    "form_tags": ["Verse", "Bridge"],
+    "description": "라르크 앙 시엘 등 90년대 비주얼 록/아트 록의 베이스 하강 선율에서 느껴지는 서늘하고 퇴폐적인 아름다움",
+    "popularity_score": 86,
+    "connectivity_score": 89,
+    "diversity_group": "descending_line",
+    "priority": 8,
+    "steps": [
+      { "position": 1, "degree": "vi", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "V", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "#IV", "quality": "half-diminished", "extension": "m7b5", "bass_degree": null },
+      { "position": 4, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 143,
+    "name": "IVmaj7 - V - iii7 - vi7 (정통 J-Rock 7th 왕도 사비)",
+    "form_tags": ["Chorus", "Intro"],
+    "description": "LiSA, SPYAIR, 유체리 등 수많은 유명 애니메이션 오프닝 곡들의 사비에서 질주감과 함께 빛을 발하는 7도 화음 왕도",
+    "popularity_score": 97,
+    "connectivity_score": 94,
+    "diversity_group": "royal_road",
+    "priority": 10,
+    "steps": [
+      { "position": 1, "degree": "IV", "quality": "major", "extension": "maj7", "bass_degree": null },
+      { "position": 2, "degree": "V", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "iii", "quality": "minor", "extension": "7", "bass_degree": null },
+      { "position": 4, "degree": "vi", "quality": "minor", "extension": "7", "bass_degree": null }
+    ]
+  },
+  {
+    "id": 144,
+    "name": "bVI - bVII - I - III7 (마리오 카덴스 후 세컨더리 도미넌트)",
+    "form_tags": ["Bridge", "Chorus"],
+    "description": "모달 인터체인지로 1도에 도달한 뒤 III7(V/vi)을 강하게 타격하여 다음 마이너 파트로 드라마틱하게 던지는 브릿지",
+    "popularity_score": 87,
+    "connectivity_score": 91,
+    "diversity_group": "modal_interchange",
+    "priority": 8,
+    "steps": [
+      { "position": 1, "degree": "bVI", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "bVII", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "I", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "III", "quality": "dominant", "extension": "7", "bass_degree": null }
+    ]
+  },
+  {
+    "id": 145,
+    "name": "IV - V - I - III7 (왕도 1도 후 III7 회전)",
+    "form_tags": ["Chorus", "Intro"],
+    "description": "1도로 안착한 후 쉬지 않고 III7을 밟아 다시 4도 또는 vi도로 튀어 오르는 끝없는 텐션의 아이돌 록/애니송 훅",
+    "popularity_score": 92,
+    "connectivity_score": 93,
+    "diversity_group": "secondary_dominant",
+    "priority": 9,
+    "steps": [
+      { "position": 1, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "V", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "I", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "III", "quality": "dominant", "extension": "7", "bass_degree": null }
+    ]
+  },
+  {
+    "id": 146,
+    "name": "I - V/7 - IV - V (청춘 청량 J-Rock 발라드 절)",
+    "form_tags": ["Verse", "Intro"],
+    "description": "아시안 쿵푸 제너레이션, BUMP OF CHICKEN 등 맑고 순수한 청춘의 감정을 대변하는 깨끗한 기타 진행",
+    "popularity_score": 89,
+    "connectivity_score": 91,
+    "diversity_group": "descending_bass",
+    "priority": 8,
+    "steps": [
+      { "position": 1, "degree": "I", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "V", "quality": "major", "extension": null, "bass_degree": "7" },
+      { "position": 3, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "V", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 147,
+    "name": "vi - IV - I - ii (모던 재패니즈 인디 록 턴)",
+    "form_tags": ["Verse"],
+    "description": "Vaundy, 유우리 등 담백하고 감성적인 모던 일본 인디 록에서 보컬 멜로디의 결을 살려주는 절(Verse) 진행",
+    "popularity_score": 87,
+    "connectivity_score": 90,
+    "diversity_group": "diatonic_pop",
+    "priority": 8,
+    "steps": [
+      { "position": 1, "degree": "vi", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "I", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "ii", "quality": "minor", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 148,
+    "name": "IV - III7 - vi - IV (마루사 4도 루프 변형)",
+    "form_tags": ["Chorus", "Intro"],
+    "description": "즛토마요, 요루시카 사비에서 1도 대신 4도로 돌아오며 서브도미넌트의 떠오르는 부유감을 유지하는 멜로디 루프",
+    "popularity_score": 93,
+    "connectivity_score": 91,
+    "diversity_group": "marunouchi_jrock",
+    "priority": 9,
+    "steps": [
+      { "position": 1, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "III", "quality": "dominant", "extension": "7", "bass_degree": null },
+      { "position": 3, "degree": "vi", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 149,
+    "name": "viiø - III7 - vi - IV (단조 차용 비장한 J-Rock 브릿지)",
+    "form_tags": ["Bridge"],
+    "description": "평행단조의 2-5를 차용해 비장미를 한껏 끌어올린 뒤 4도로 안착하여 코러스의 폭발을 준비하는 브릿지 전용 진행",
+    "popularity_score": 85,
+    "connectivity_score": 88,
+    "diversity_group": "secondary_dominant",
+    "priority": 8,
+    "steps": [
+      { "position": 1, "degree": "vii°", "quality": "half-diminished", "extension": "m7b5", "bass_degree": null },
+      { "position": 2, "degree": "III", "quality": "dominant", "extension": "7", "bass_degree": null },
+      { "position": 3, "degree": "vi", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 150,
+    "name": "IV - I/3 - IV - V (스피츠풍 아르페지오 록 프리코러스)",
+    "form_tags": ["Pre-Chorus", "Verse"],
+    "description": "4도와 1도의 3음 베이스(C/E)를 교차하며 서정성을 잔잔히 채운 뒤 5도 도미넌트로 시원하게 쏘아 올리는 진행",
+    "popularity_score": 88,
+    "connectivity_score": 92,
+    "diversity_group": "subdominant_start",
+    "priority": 8,
+    "steps": [
+      { "position": 1, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "I", "quality": "major", "extension": null, "bass_degree": "3" },
+      { "position": 3, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "V", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 151,
+    "name": "bVII - I - bVII - I (모던 록/메탈 기타 리프 뱀프)",
+    "form_tags": ["Intro", "Interlude"],
+    "description": "디스토션 기타의 헤비한 파워코드 리프와 찰떡궁합을 이루는 믹솔리디안 기반의 인트로/간주 리프 뱀프",
+    "popularity_score": 83,
+    "connectivity_score": 86,
+    "diversity_group": "modal_interchange",
+    "priority": 7,
+    "steps": [
+      { "position": 1, "degree": "bVII", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "I", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "bVII", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "I", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 152,
+    "name": "IV - III7 - vi - IV (세컨더리 도미넌트 왕도 4도 순환)",
+    "form_tags": ["Chorus", "Pre-Chorus"],
+    "description": "III7으로 감정선을 당긴 후 6도를 거쳐 4도로 루프를 완성하는 감성 록 밴드들의 트레이드마크 진행",
+    "popularity_score": 91,
+    "connectivity_score": 90,
+    "diversity_group": "secondary_dominant",
+    "priority": 9,
+    "steps": [
+      { "position": 1, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "III", "quality": "dominant", "extension": "7", "bass_degree": null },
+      { "position": 3, "degree": "vi", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 153,
+    "name": "vi - bVII - I - I (모달 차용 마이너-메이저 승리감 해결)",
+    "form_tags": ["Chorus", "Outro"],
+    "description": "마이너의 고난에서 bVII를 거쳐 1도로 환하게 해소되는 드라마틱한 승리와 환희의 엔딩 진행",
+    "popularity_score": 86,
+    "connectivity_score": 89,
+    "diversity_group": "modal_interchange",
+    "priority": 8,
+    "steps": [
+      { "position": 1, "degree": "vi", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "bVII", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "I", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "I", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 154,
+    "name": "I - bVII - IV - IV (재패니즈 록 앤섬 진행)",
+    "form_tags": ["Chorus", "Outro"],
+    "description": "스타디움 록과 펑크 록의 떼창을 유도하는 시원하고 거침없는 4도 서스테인 믹솔리디안 진행",
+    "popularity_score": 87,
+    "connectivity_score": 88,
+    "diversity_group": "modal_interchange",
+    "priority": 8,
+    "steps": [
+      { "position": 1, "degree": "I", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "bVII", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 155,
+    "name": "IV - V - #Vdim - vi (상행 디미니시 마이너 직행 텐션)",
+    "form_tags": ["Pre-Chorus", "Bridge"],
+    "description": "4-5도 진행 후 #Vdim을 경유하여 vi 마이너로 강력하게 빨려 들어가는 긴장과 스릴의 애니송 빌드업",
+    "popularity_score": 90,
+    "connectivity_score": 94,
+    "diversity_group": "passing_diminished",
+    "priority": 9,
+    "steps": [
+      { "position": 1, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "V", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "#V", "quality": "diminished", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "vi", "quality": "minor", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 156,
+    "name": "vi - ii - V - III7 (코무로 마이너 2-5 후 세컨더리 도미넌트)",
+    "form_tags": ["Verse", "Interlude"],
+    "description": "단조 분위기의 2-5 진행 뒤 III7(V/vi)을 붙여 쉼 없이 다음 마디로 달려가게 만드는 고속 록 턴어라운드",
+    "popularity_score": 87,
+    "connectivity_score": 93,
+    "diversity_group": "secondary_dominant",
+    "priority": 8,
+    "steps": [
+      { "position": 1, "degree": "vi", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "ii", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "V", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "III", "quality": "dominant", "extension": "7", "bass_degree": null }
+    ]
+  },
+  {
+    "id": 157,
+    "name": "IVmaj7 - V7 - vi7 - vi7 (감성 질주 록 사비 페달)",
+    "form_tags": ["Chorus"],
+    "description": "후렴의 문을 활짝 열고 vi7에서 2마디 동안 감정을 쏟아붓는 보컬 멜로디 강조형 모던 J-Rock 진행",
+    "popularity_score": 92,
+    "connectivity_score": 89,
+    "diversity_group": "royal_road",
+    "priority": 9,
+    "steps": [
+      { "position": 1, "degree": "IV", "quality": "major", "extension": "maj7", "bass_degree": null },
+      { "position": 2, "degree": "V", "quality": "dominant", "extension": "7", "bass_degree": null },
+      { "position": 3, "degree": "vi", "quality": "minor", "extension": "7", "bass_degree": null },
+      { "position": 4, "degree": "vi", "quality": "minor", "extension": "7", "bass_degree": null }
+    ]
+  },
+  {
+    "id": 158,
+    "name": "I - V - bVII - IV (클래식 하드록/J-Rock 리프 순환)",
+    "form_tags": ["Verse", "Intro"],
+    "description": "파워코드 리프와 질주하는 드럼 비트에 최적화된 스트레이트하고 호쾌한 록앤롤 진행",
+    "popularity_score": 86,
+    "connectivity_score": 88,
+    "diversity_group": "modal_interchange",
+    "priority": 8,
+    "steps": [
+      { "position": 1, "degree": "I", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "V", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "bVII", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 159,
+    "name": "IV - iv - I - #IVø (재지 서브도미넌트 마이너 + 하프디미니시)",
+    "form_tags": ["Bridge", "Interlude"],
+    "description": "iv 모달 인터체인지와 #IVø의 정교한 텐션 배합으로 도회적이고 몽환적인 감성을 연출하는 시티록 브릿지",
+    "popularity_score": 84,
+    "connectivity_score": 87,
+    "diversity_group": "modal_interchange",
+    "priority": 8,
+    "steps": [
+      { "position": 1, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "iv", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "I", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "#IV", "quality": "half-diminished", "extension": "m7b5", "bass_degree": null }
+    ]
+  },
+  {
+    "id": 160,
+    "name": "bVI - bVII - I - IV (보컬로이드 사비 4도 오픈 루프)",
+    "form_tags": ["Chorus"],
+    "description": "마리오 카덴스로 1도에 도달한 후 4도로 시원하게 공간을 열며 후렴의 다음 소절로 달리는 쾌속 진행",
+    "popularity_score": 89,
+    "connectivity_score": 91,
+    "diversity_group": "vocaloid_speed",
+    "priority": 9,
+    "steps": [
+      { "position": 1, "degree": "bVI", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "bVII", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "I", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  }
+]

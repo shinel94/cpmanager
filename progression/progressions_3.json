@@ -1,0 +1,514 @@
+[
+  {
+    "id": 65,
+    "name": "I - V - IV - IV (심플 팝/록 4도 오픈형)",
+    "form_tags": ["Chorus", "Verse"],
+    "description": "후반 2마디를 IV도로 시원하게 열어주며 멜로디의 공간감을 극대화하는 브릿팝/인디 록 단골 후렴",
+    "popularity_score": 89,
+    "connectivity_score": 90,
+    "diversity_group": "diatonic_pop",
+    "priority": 8,
+    "steps": [
+      { "position": 1, "degree": "I", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "V", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 66,
+    "name": "IV - V - vi - IV (왕도 4도 루프 팝 후렴)",
+    "form_tags": ["Chorus"],
+    "description": "왕도 진행의 끝을 IV도로 연결하여 쉼 없이 청량하고 경쾌하게 달리는 K-Pop 댄스/틴팝 후렴 진행",
+    "popularity_score": 93,
+    "connectivity_score": 92,
+    "diversity_group": "royal_road",
+    "priority": 9,
+    "steps": [
+      { "position": 1, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "V", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "vi", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 67,
+    "name": "vi - IV - V - I (마이너 출발 으뜸 종지)",
+    "form_tags": ["Verse", "Bridge"],
+    "description": "마이너의 애수 어린 분위기로 시작해 4-5-1의 통쾌하고 따뜻한 장조 종지로 해소되는 균형 잡힌 진행",
+    "popularity_score": 88,
+    "connectivity_score": 94,
+    "diversity_group": "cadence_resolution",
+    "priority": 8,
+    "steps": [
+      { "position": 1, "degree": "vi", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "V", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "I", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 68,
+    "name": "I - iii - IV - V (상행 다이어토닉 팝 발라드)",
+    "form_tags": ["Verse", "Intro"],
+    "description": "1도부터 5도까지 자연스럽게 감정이 고조되며 멜로디의 서정적인 흐름을 유도하는 발라드/어쿠스틱 진행",
+    "popularity_score": 90,
+    "connectivity_score": 93,
+    "diversity_group": "stepwise_ascent",
+    "priority": 9,
+    "steps": [
+      { "position": 1, "degree": "I", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "iii", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "V", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 69,
+    "name": "ii - V - vi - IV (2-5 대리마이너 후 4도 턴)",
+    "form_tags": ["Pre-Chorus", "Chorus"],
+    "description": "2-5 진행 후 1도 대신 대리코드 vi로 우회하여 여운을 남긴 뒤 IV도로 전환하는 감각적인 팝 진행",
+    "popularity_score": 87,
+    "connectivity_score": 91,
+    "diversity_group": "circle_of_fifths",
+    "priority": 8,
+    "steps": [
+      { "position": 1, "degree": "ii", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "V", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "vi", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 70,
+    "name": "I - bVII - bVI - V (안달루시아 록 브릿지)",
+    "form_tags": ["Bridge", "Intro"],
+    "description": "으뜸음에서 출발해 베이스가 단계적으로 하강(플라멩코/하드록 모달)하여 비장미를 극대화하는 브릿지 진행",
+    "popularity_score": 85,
+    "connectivity_score": 89,
+    "diversity_group": "modal_interchange",
+    "priority": 8,
+    "steps": [
+      { "position": 1, "degree": "I", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "bVII", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "bVI", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "V", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 71,
+    "name": "IV - I - ii - V (부드러운 프리코러스 빌드업)",
+    "form_tags": ["Pre-Chorus"],
+    "description": "서브도미넌트에서 1도로 안정감을 준 후 2-5로 다시 에너지를 축적하여 코러스 진입을 예비하는 빌드업",
+    "popularity_score": 89,
+    "connectivity_score": 93,
+    "diversity_group": "subdominant_start",
+    "priority": 9,
+    "steps": [
+      { "position": 1, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "I", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "ii", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "V", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 72,
+    "name": "vi - V - IV - I (마이너 플라갈 하강 안착)",
+    "form_tags": ["Verse", "Bridge"],
+    "description": "마이너에서 베이스가 하강하다가 4도에서 1도로 이어지는 변격 종지(Plagal)로 포근하게 마무리되는 진행",
+    "popularity_score": 86,
+    "connectivity_score": 90,
+    "diversity_group": "descending_line",
+    "priority": 8,
+    "steps": [
+      { "position": 1, "degree": "vi", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "V", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "I", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 73,
+    "name": "I - V/7 - vi - iii (캐논 베이스 하강 완성형)",
+    "form_tags": ["Verse", "Intro"],
+    "description": "V코드에 7음 베이스를 적용하여 파헬벨 캐논의 원래 베이스 선율을 완벽히 재현한 최고급 서정 진행",
+    "popularity_score": 91,
+    "connectivity_score": 95,
+    "diversity_group": "descending_bass",
+    "priority": 9,
+    "steps": [
+      { "position": 1, "degree": "I", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "V", "quality": "major", "extension": null, "bass_degree": "7" },
+      { "position": 3, "degree": "vi", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "iii", "quality": "minor", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 74,
+    "name": "IV - V - I - V (후렴 도미넌트 회전형 루프)",
+    "form_tags": ["Chorus"],
+    "description": "3번째 마디 으뜸음 해소 후 4번째 마디에서 다시 V도로 던져주어 후렴 멜로디의 2회차 반복을 강력히 유도",
+    "popularity_score": 90,
+    "connectivity_score": 93,
+    "diversity_group": "royal_road",
+    "priority": 9,
+    "steps": [
+      { "position": 1, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "V", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "I", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "V", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 75,
+    "name": "ii - iii - vi - V (부드러운 재즈 팝 프리코러스)",
+    "form_tags": ["Pre-Chorus"],
+    "description": "2-3도 상행 후 vi로 안착했다가 5도로 전환되는 감미로운 시티팝/어반 프리코러스 진행",
+    "popularity_score": 85,
+    "connectivity_score": 91,
+    "diversity_group": "stepwise_ascent",
+    "priority": 8,
+    "steps": [
+      { "position": 1, "degree": "ii", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "iii", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "vi", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "V", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 76,
+    "name": "bVI - V - I - I (모달 차용 도미넌트 직접 해결)",
+    "form_tags": ["Outro", "Bridge"],
+    "description": "bVI에서 V도로 강렬하게 반음 하강하여 도미넌트 긴장을 조성한 뒤 1도로 완전 종지하는 인상적인 아웃트로",
+    "popularity_score": 84,
+    "connectivity_score": 89,
+    "diversity_group": "modal_interchange",
+    "priority": 8,
+    "steps": [
+      { "position": 1, "degree": "bVI", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "V", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "I", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "I", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 77,
+    "name": "I - IV - V - IV (클래식 록/팝 뱀프)",
+    "form_tags": ["Verse", "Intro"],
+    "description": "60-70년대 비틀즈, 롤링스톤스부터 현대 펑크 록까지 쓰이는 단순하면서도 중독성 강한 에너지 뱀프",
+    "popularity_score": 86,
+    "connectivity_score": 88,
+    "diversity_group": "diatonic_pop",
+    "priority": 8,
+    "steps": [
+      { "position": 1, "degree": "I", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "V", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 78,
+    "name": "vi - ii - V - vi (단조 감성 마이너 2-5 루프)",
+    "form_tags": ["Verse", "Interlude"],
+    "description": "vi도를 으뜸음처럼 활용하는 평행단조 중심의 2-5-1 루프로 서늘하고 몽환적인 R&B/힙합 트랙에 적합",
+    "popularity_score": 87,
+    "connectivity_score": 93,
+    "diversity_group": "circle_of_fifths",
+    "priority": 8,
+    "steps": [
+      { "position": 1, "degree": "vi", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "ii", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "V", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "vi", "quality": "minor", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 79,
+    "name": "IV - I - IV - V (서브도미넌트 대비 후 도미넌트 빌드)",
+    "form_tags": ["Pre-Chorus", "Verse"],
+    "description": "4도와 1도의 온화한 교차 후 마지막 5도에서 힘차게 후렴을 열어주는 희망찬 프리코러스 진행",
+    "popularity_score": 88,
+    "connectivity_score": 92,
+    "diversity_group": "subdominant_start",
+    "priority": 8,
+    "steps": [
+      { "position": 1, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "I", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "V", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 80,
+    "name": "I - bVII - IV - V (믹솔리디안 드라이브 프리코러스)",
+    "form_tags": ["Pre-Chorus", "Chorus"],
+    "description": "bVII의 거친 록 사운드와 IV-V의 추진력이 결합되어 폭발적인 코러스 진입을 만들어내는 진행",
+    "popularity_score": 85,
+    "connectivity_score": 89,
+    "diversity_group": "modal_interchange",
+    "priority": 8,
+    "steps": [
+      { "position": 1, "degree": "I", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "bVII", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "V", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 81,
+    "name": "ii - V - I - III7 (2-5-1 후 vi 향한 세컨더리 도미넌트)",
+    "form_tags": ["Verse", "Interlude"],
+    "description": "깔끔하게 1도로 해결된 후 곧바로 vi로 연결되는 세컨더리 도미넌트 III7을 투입하여 다음 프레이즈를 예고",
+    "popularity_score": 86,
+    "connectivity_score": 94,
+    "diversity_group": "secondary_dominant",
+    "priority": 8,
+    "steps": [
+      { "position": 1, "degree": "ii", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "V", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "I", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "III", "quality": "dominant", "extension": "7", "bass_degree": null }
+    ]
+  },
+  {
+    "id": 82,
+    "name": "IV - iv - I - vi (서브도미넌트 마이너 후 vi 안착)",
+    "form_tags": ["Bridge", "Chorus"],
+    "description": "iv 모달 인터체인지의 애절함을 1도 거쳐 감성적인 vi 마이너로 달래주는 극적인 가요 발라드 진행",
+    "popularity_score": 89,
+    "connectivity_score": 89,
+    "diversity_group": "modal_interchange",
+    "priority": 9,
+    "steps": [
+      { "position": 1, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "iv", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "I", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "vi", "quality": "minor", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 83,
+    "name": "vi - IV - ii - V (마이너에서 프리코러스 연결)",
+    "form_tags": ["Pre-Chorus", "Verse"],
+    "description": "어두운 마이너에서 4도-2도를 거치며 점점 긴장을 고조시킨 뒤 도미넌트 5도로 열어주는 발라드 빌드업",
+    "popularity_score": 88,
+    "connectivity_score": 92,
+    "diversity_group": "diatonic_pop",
+    "priority": 8,
+    "steps": [
+      { "position": 1, "degree": "vi", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "ii", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "V", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 84,
+    "name": "I - VI7 - ii - IV (스윙/시티팝 세컨더리 도미넌트)",
+    "form_tags": ["Verse"],
+    "description": "VI7(V/ii)으로 통통 튀는 세련됨을 준 뒤 4도 서브도미넌트로 부드럽게 마무리하는 라운지/시티팝 절 진행",
+    "popularity_score": 82,
+    "connectivity_score": 90,
+    "diversity_group": "secondary_dominant",
+    "priority": 7,
+    "steps": [
+      { "position": 1, "degree": "I", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "VI", "quality": "dominant", "extension": "7", "bass_degree": null },
+      { "position": 3, "degree": "ii", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 85,
+    "name": "IV - II7 - V - I (세컨더리 도미넌트 V/V 완전 종지)",
+    "form_tags": ["Outro", "Chorus"],
+    "description": "4도에서 5도로 향하는 더블 도미넌트 II7을 배치하여 극적인 설득력과 함께 1도로 안착하는 카덴스",
+    "popularity_score": 87,
+    "connectivity_score": 93,
+    "diversity_group": "secondary_dominant",
+    "priority": 8,
+    "steps": [
+      { "position": 1, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "II", "quality": "dominant", "extension": "7", "bass_degree": null },
+      { "position": 3, "degree": "V", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "I", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 86,
+    "name": "iii - IV - V - I (다이어토닉 상행 해결 턴)",
+    "form_tags": ["Chorus", "Bridge"],
+    "description": "3도 대리마이너에서 4-5-1로 통쾌하게 상승하며 가슴 벅찬 클라이맥스를 장식하는 앤섬(Anthem) 진행",
+    "popularity_score": 86,
+    "connectivity_score": 92,
+    "diversity_group": "stepwise_ascent",
+    "priority": 8,
+    "steps": [
+      { "position": 1, "degree": "iii", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "V", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "I", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 87,
+    "name": "I - IV - ii - V (감미로운 R&B / 발라드 절)",
+    "form_tags": ["Verse", "Intro"],
+    "description": "1도에서 서브도미넌트 계열인 4도와 2도를 연달아 지나 5도로 우아하게 마무리하는 웰메이드 발라드 진행",
+    "popularity_score": 88,
+    "connectivity_score": 92,
+    "diversity_group": "diatonic_pop",
+    "priority": 8,
+    "steps": [
+      { "position": 1, "degree": "I", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "ii", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "V", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 88,
+    "name": "bVII - bVI - bVII - I (판타지 / 애니송 클라이맥스)",
+    "form_tags": ["Bridge", "Chorus"],
+    "description": "모달 인터체인지 코드들을 오가며 웅장한 전장의 비장미와 기적 같은 승리의 희열을 표현하는 진행",
+    "popularity_score": 83,
+    "connectivity_score": 85,
+    "diversity_group": "modal_interchange",
+    "priority": 8,
+    "steps": [
+      { "position": 1, "degree": "bVII", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "bVI", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "bVII", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "I", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 89,
+    "name": "IV - iii - vi - V (감성 마이너 경유 프리코러스)",
+    "form_tags": ["Pre-Chorus"],
+    "description": "4도에서 3-6 마이너 라인으로 감정을 차분히 가라앉혔다가 5도 도미넌트로 반전 상승시키는 프리코러스",
+    "popularity_score": 89,
+    "connectivity_score": 92,
+    "diversity_group": "descending_line",
+    "priority": 9,
+    "steps": [
+      { "position": 1, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "iii", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "vi", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "V", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 90,
+    "name": "vi - I - V - IV (모던 얼터너티브 팝 루프)",
+    "form_tags": ["Verse", "Chorus"],
+    "description": "어두움과 밝음이 교차하며 4도로 끝나 묘한 여운과 반복성을 주는 트렌디한 얼터너티브 팝 진행",
+    "popularity_score": 87,
+    "connectivity_score": 89,
+    "diversity_group": "diatonic_pop",
+    "priority": 8,
+    "steps": [
+      { "position": 1, "degree": "vi", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "I", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "V", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 91,
+    "name": "I - I/7 - I/b7 - IV (토닉 베이스 하행 클리셰)",
+    "form_tags": ["Intro", "Verse"],
+    "description": "으뜸음 코드가 유지되며 베이스음만 반음씩 내려앉아 IV도로 전환되는 비틀즈풍 클래식 라인 클리셰",
+    "popularity_score": 85,
+    "connectivity_score": 88,
+    "diversity_group": "line_cliche",
+    "priority": 8,
+    "steps": [
+      { "position": 1, "degree": "I", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "I", "quality": "major", "extension": null, "bass_degree": "7" },
+      { "position": 3, "degree": "I", "quality": "dominant", "extension": "7", "bass_degree": "b7" },
+      { "position": 4, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 92,
+    "name": "ii - IV - vi - V (2도 출발 모던 팝 빌드업)",
+    "form_tags": ["Pre-Chorus", "Verse"],
+    "description": "2도로 산뜻하게 출발해 4-6-5도로 이어지며 에너지를 깔끔하게 증폭시키는 현대적인 빌드업 진행",
+    "popularity_score": 88,
+    "connectivity_score": 91,
+    "diversity_group": "stepwise_ascent",
+    "priority": 8,
+    "steps": [
+      { "position": 1, "degree": "ii", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "vi", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "V", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 93,
+    "name": "IV - V - I/3 - vi (왕도 진행 1도 베이스 전위 서정형)",
+    "form_tags": ["Chorus", "Bridge"],
+    "description": "왕도 진행의 3번째 마디에 1도의 3음 베이스 전위(C/E)를 적용해 베이스 선율을 아름답게 다듬은 진행",
+    "popularity_score": 90,
+    "connectivity_score": 93,
+    "diversity_group": "royal_road",
+    "priority": 9,
+    "steps": [
+      { "position": 1, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "V", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "I", "quality": "major", "extension": null, "bass_degree": "3" },
+      { "position": 4, "degree": "vi", "quality": "minor", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 94,
+    "name": "bVI - bVII - IV - I (모달 인터체인지 플라갈 안착)",
+    "form_tags": ["Bridge", "Outro"],
+    "description": "웅장한 모달 인터체인지 진행 후 4도 서브도미넌트를 거쳐 1도로 성스럽고 따스하게 내려앉는 엔딩",
+    "popularity_score": 83,
+    "connectivity_score": 86,
+    "diversity_group": "modal_interchange",
+    "priority": 7,
+    "steps": [
+      { "position": 1, "degree": "bVI", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "bVII", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "I", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 95,
+    "name": "vi - III7 - vi - V (비장한 마이너 세컨더리 도미넌트)",
+    "form_tags": ["Bridge", "Intro"],
+    "description": "마이너 코드 사이에 강력한 III7(V/vi)을 두 번 거치며 비장하고 드라마틱한 감정 폭풍을 몰고 오는 브릿지",
+    "popularity_score": 85,
+    "connectivity_score": 90,
+    "diversity_group": "secondary_dominant",
+    "priority": 8,
+    "steps": [
+      { "position": 1, "degree": "vi", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "III", "quality": "dominant", "extension": "7", "bass_degree": null },
+      { "position": 3, "degree": "vi", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "V", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 96,
+    "name": "IV - iv - ii - V (서브도미넌트 마이너 프리코러스)",
+    "form_tags": ["Pre-Chorus"],
+    "description": "iv 모달 인터체인지로 아련함을 고조시킨 후 2-5로 연결해 후렴 진입의 드라마틱한 긴장감을 완성",
+    "popularity_score": 88,
+    "connectivity_score": 91,
+    "diversity_group": "modal_interchange",
+    "priority": 9,
+    "steps": [
+      { "position": 1, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "iv", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "ii", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "V", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  }
+]
