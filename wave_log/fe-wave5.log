@@ -1,0 +1,110 @@
+# FE Wave 5 진행 로그
+
+- 실행 일시: 2026-09-22
+- 대상 범위: 4마디 추천 패널 (`RecommendationPanel`), 4가지 정렬 탭, 페이지네이션 및 다양성 그룹 필터링, 예외 상태 화면, 실시간 화성 기법 분석 카드 (`TechniqueCard`), 비파괴 초안 병합 연동
+
+---
+
+## 1. 작업 개요
+
+FE Wave 4의 코드 상세 속성 편집기에 이어, 시스템 코드 진행 160선과 실시간 화성 기법 분석 규칙 엔진을 프론트엔드 UI에 전면 연동했습니다.
+
+기존의 정적 Mock 카드 형태였던 우측 패널을 완전히 제거하고, 실제 Next.js Route Handler(`POST /api/recommendations`, `POST /api/analysis`)와 비동기 통신하는 독립된 전용 컴포넌트로 구축했습니다:
+1. **스마트 4마디 추천 패널 (`RecommendationPanel.tsx`)**:
+   - 4개 정렬 탭: `대중성 우선 (popularity)`, `코드 연결성 우선 (connectivity)`, `다양성 우선 (diversity)`, `무작위 (random)`
+   - 4마디 상대 위치(1~4) 정규화 기반 비동기 API 통신
+   - 페이지네이션 (이전/다음 페이지 컨트롤러)
+   - 페이지 전환 시 이전 페이지에 노출된 `diversityGroup`을 `excludeDiversityGroups`로 누적 전달하여 중복 추천 방지
+   - 4대 예외 상태 화면 안내:
+     - `too_short`: 4마디 미만 블록 안내
+     - `multi_chord_excluded`: 복수 코드 포함 마디가 있어 4마디 추천에서 제외됨 안내
+     - `all_filled`: 4마디가 모두 입력 완료되어 추천을 받으려면 일부 마디를 비워야 함 안내
+     - `no_match`: 현재 부분 입력된 코드 조건과 일치하는 진행이 없음 안내
+   - 로딩 스켈레톤 UI (3개 카드 반투명 펄스 효과)
+   - [이 진행 ${startBar}~${endBar}마디에 적용하기] 비파괴적 병합 적용
+2. **실시간 기법 분석 피드백 카드 (`TechniqueCard.tsx`)**:
+   - 코드를 차트에 주입하거나 편집할 때 현재 4마디 맥락(`bars`)을 `/api/analysis`로 전송
+   - 모달 인터체인지, 세컨더리 도미넌트, 슬래시 코드 등 이론 기법 감지 시 보라색 강조 카드 노출
+   - 미감지 시 기본 다이어토닉 화성 안내 가이드 노출
+3. **워크스페이스 오케스트레이션 (`WorkspaceShell.tsx`)**:
+   - 다이어토닉 퀵 팔레트 클릭 및 `ChordEditModal` 저장 시 `runTechniqueAnalysis` 자동 호출
+   - `lastTechnique` 및 `setLastTechnique`를 Context와 연동하여 실시간 피드백 갱신
+
+### 생성 및 갱신된 산출물
+
+1. `app/components/analysis/TechniqueCard.tsx` (신규 생성):
+   - 실시간 기법 감지 시 기법명 및 음악 이론적 설명 카드 렌더링
+   - 닫기(`✕`) 버튼 지원
+   - 미감지 시 기본 다이어토닉 가이드 렌더링
+2. `app/components/recommendation/RecommendationPanel.tsx` (신규 생성):
+   - 4개 정렬 탭, 로딩 스켈레톤, 4대 예외 상태(`too_short`, `multi_chord_excluded`, `all_filled`, `no_match`), 페이지네이션 컨트롤러, 다양성 그룹 누적 제외, 비파괴 병합 액션 완비
+3. `app/components/workspace/WorkspaceShell.tsx`:
+   - Mock 우측 패널을 `TechniqueCard` 및 `RecommendationPanel`로 완전 대체
+   - `runTechniqueAnalysis` 헬퍼 함수 구현 및 코드 설정 시 비동기 기법 분석 연동
+4. `test/fe-wave5-recommendation.test.ts` (신규 생성):
+   - 4종 정렬 기준(`popularity`, `connectivity`, `diversity`, `random`) 추천 API 통합 검증
+   - `multi_chord_excluded` 및 `all_filled` 예외 상태 검증
+   - 모달 인터체인지(`iv`), 세컨더리 도미넌트(`VI7`), 슬래시 코드 실시간 기법 분석 검증
+   - Block 1(`1~4`) 및 Block 2(`5~8`) 대상 비파괴적 초안 병합 검증 (4종 테스트 전체 통과)
+
+---
+
+## 2. 발생한 기술적 이슈 및 해결 내역
+
+### FE-W5-001: 4마디 블록 API 호출 시 상대 마디 번호(1~4) 정규화
+- **문제**:
+  - 2번째 블록(5~8마디)을 추천 요청할 때 마디 위치를 실제 마디 번호(`5, 6, 7, 8`)로 백엔드 `/api/recommendations`에 전달하면 백엔드 검증기(`bar positions must be 1 through 4`)에 의해 400 Bad Request 에러가 발생했습니다.
+- **해결**:
+  - `RecommendationPanel`에서 API 페이로드를 생성할 때 `[1, 2, 3, 4].map(relativePos => ({ position: relativePos, chords: ... }))` 형태로 블록 시작 마디(`startBar`) 기준 상대 번호로 항상 정규화하여 전달함으로써 1번째 블록뿐 아니라 2번째 블록, 3번째 블록에서도 완벽하게 추천이 조회되도록 구현했습니다.
+
+### FE-W5-002: 기법 분석 요청 시 4마디 컨텍스트 내 타겟 마디 좌표 불일치 방지
+- **문제**:
+  - `/api/analysis`는 `target: { barPosition, beat }`와 4마디 컨텍스트 `bars`를 요구하며, `target.barPosition`이 `bars`의 `bar.position` 목록 중에 반드시 존재해야 합니다.
+  - 2번째 블록(5~8마디)의 6번 마디를 수정한 경우, `bars`가 `1~4`로 정규화되어 있다면 `target.barPosition: 6`을 찾지 못해 `target bar is outside the requested block` 오류가 발생할 수 있었습니다.
+- **해결**:
+  - `runTechniqueAnalysis`에서 상대 위치 `targetRelPos = barPos - blockStart + 1`을 계산하여 `target: { barPosition: targetRelPos, beat }`로 일치시키고, `blockBars` 내 해당 타겟 마디에 새로 입력된 코드(`afterChord`)를 즉시 주입하여 전후 맥락을 완성한 뒤 분석을 요청하도록 설계했습니다.
+
+### FE-W5-003: 페이지네이션 전환 시 다양성 그룹(diversityGroup) 누적 제외
+- **문제**:
+  - 사용자가 "다음 ▶" 페이지를 눌렀을 때 이미 이전 페이지에서 본 동일한 다양성 그룹(예: 캐논 변형 그룹)의 진행이 다음 페이지에 다시 노출되어 추천의 참신성이 저하되는 현상이 있었습니다.
+- **해결**:
+  - 현재 페이지에 렌더링된 추천 항목들의 `diversityGroup`을 추출하여 `excludedDiversityGroups` 상태에 누적 배열로 저장하고, 다음 페이지 요청 시 `excludeDiversityGroups` 쿼리 파라미터로 백엔드에 전달함으로써 페이지를 넘길 때마다 완전히 새로운 그룹의 코드 진행이 우선 순환되도록 구현했습니다.
+
+---
+
+## 3. 검증 결과 (Gate `[G5-FE]` 통과)
+
+- **타입 검사**: `npm run typecheck` 통과 (TypeScript 에러 0건)
+- **단위/통합 테스트**: `npm test` 총 47개 테스트 전체 통과 (`47 passed`, 0 failed)
+  - FE Wave 5 신규 테스트 4종 전체 통과
+- **Next.js 프로덕션 빌드**: `npm run build` 성공 (컴파일 시간 ~1144ms)
+- **게이트 기준 충족 확인**:
+  - 4마디 블록 선택 → 4가지 정렬 기준별 추천 조회 → 비파괴 병합 적용 시 기존 입력이 보존된 상태로 빈 칸이 채워지고, 코드 수정 시 적용된 이론 기법(모달 인터체인지, 세컨더리 도미넌트 등)이 즉시 UI에 피드백됨을 확인했습니다.
+
+---
+
+## 4. 추가 요구사항 반영: 송폼 구간 드래그 앤 드롭 순서 재배치 (Drag & Drop Reordering)
+
+### 4.1 요구사항 배경 및 분석
+- **배경**:
+  - 기존 송폼 편집기는 단일 클릭 버튼(`▲`/`▼`)으로만 구간 순서를 한 칸씩 이동할 수 있어, 4개 이상의 구간(예: Intro - Verse - Pre-Chorus - Chorus - Bridge - Outro)으로 확장된 곡에서 구간 순서를 크게 변경할 때 다수의 클릭이 필요했습니다.
+  - 다음 단계(Wave 6)로 진입하기 전, 사용자가 마우스로 원하는 송폼 구간 카드를 직접 드래그하여 직관적으로 원하는 위치로 옮길 수 있는 드래그 앤 드롭(Drag & Drop) 기능 요구사항이 접수되었습니다.
+
+### 4.2 구현 내용
+1. **HTML5 Native Drag & Drop API 적용 (`SectionList.tsx`)**:
+   - 외부 라이브러리 추가 없이 HTML5 표준 드래그 앤 드롭 이벤트(`onDragStart`, `onDragOver`, `onDragLeave`, `onDrop`, `onDragEnd`)를 적용하여 0KB의 번들 오버헤드로 구현했습니다.
+   - 각 구간 카드에 시각적 드래그 핸들 아이콘(`⋮⋮`)을 추가하고 마우스 호버/클릭 시 반응형 커서(`cursor-grab`, `active:cursor-grabbing`)를 제공하여 드래그 인터랙션을 즉시 인지할 수 있도록 했습니다.
+   - 카드 내부의 버튼(이동 버튼, 삭제 버튼, 마디 수 증감 스텝퍼) 클릭 시 드래그 동작이 오발동되지 않도록 `onDragStart={(e) => e.stopPropagation()}` 및 `onClick={(e) => e.stopPropagation()}`을 부여하여 이벤트 버블링을 격리했습니다.
+
+2. **시각적 드래그 상태 피드백**:
+   - **드래그 중인 카드 (`isDragging`)**: 반투명 축소(`opacity-40 scale-[0.98]`), 인디고 점선 테두리(`border-dashed border-indigo-400`), 옅은 배경색(`bg-indigo-50/40`)으로 현재 이동 중인 객체를 표시.
+   - **드롭 대상 위치 (`isDragOver`)**: 상단 두꺼운 강조선(`border-t-2 border-t-indigo-600`), 링 포커스(`ring-2 ring-indigo-400/50`), 카드 그림자(`shadow-md`)로 대상 위치를 명확히 안내.
+
+3. **초안 상태 연동 (`reorderSections`)**:
+   - 드롭(`onDrop`) 완료 시 `ProjectDraftContext`의 `reorderSections(fromIndex, toIndex)` 액션을 디스패치하여 초안 내 구간 순서를 즉시 갱신하고 안내 토스트(`'${sec.name}' 구간 순서가 변경되었습니다.`)를 표시합니다.
+   - 기존의 단일 클릭 이동 버튼(`▲`/`▼`)도 함께 유지하여 접근성 친화적인 다중 입력 방식을 보장합니다.
+
+### 4.3 관련 문서 갱신 내역
+- `fe-todo.md`: Wave 3 및 Phase 3에 HTML5 드래그 앤 드롭 순서 변경 상세 항목 반영
+- `development_plan.md`: Phase 4 송폼 기능 목록에 드래그 앤 드롭 및 상/하 이동 버튼 명시
+- `README.md`: 주요 기능 > 송폼 편집기 항목에 드래그 앤 드롭 및 접근성 버튼 지원 내용 갱신

@@ -1,0 +1,46 @@
+# Backend Technique Enhancement Step 6 / Remaining Work Log
+
+## Status
+
+- Started: 2026-09-21
+- Scope: remaining technique enhancements, bass-line patterns, advanced reharmonization, response expansion
+- Status: Complete
+
+## Implemented
+
+- Added bass-line pattern output to `ProgressionAnalyzer`:
+  - descending bass line
+  - ascending bass line
+  - pedal point
+- Added advanced technique matchers:
+  - tritone substitution
+  - backdoor dominant
+  - chromatic mediant
+  - passing diminished
+  - common-tone diminished
+- Added secondary leading-tone diminished seed and matcher in the previous enhancement step.
+- Extended the seed rule set to 13 rules.
+- Added technique alternatives to the primary technique result.
+- Added analysis request context to the API response.
+- Added progression alternatives to the analysis response.
+- Preserved existing FE fields `technique.id`, `technique.name`, and `technique.description`.
+
+## Scope Decisions
+
+- Bass-line analysis uses one chord per bar in the current block analyzer. Multi-chord bars remain excluded from block-level progression analysis.
+- Advanced diminished and chromatic rules use conservative structural heuristics rather than attempting full voicing-level inference.
+- `alternatives`, `progressionAlternatives`, `confidence`, `evidence`, and `context` are additive response fields.
+
+## Verification
+
+```text
+npm run typecheck -> passed
+npm test -> passed (69 tests)
+```
+
+## Final Enhancement Status
+
+- Enhancement Wave A: complete
+- Enhancement Wave B: complete
+- Enhancement Wave C: complete
+- Remaining future work: richer voice-leading/voicing analysis and user-facing explanations if required by testing.

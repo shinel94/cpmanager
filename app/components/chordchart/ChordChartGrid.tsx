@@ -15,6 +15,7 @@ export type ChordChartGridProps = {
   onSelectBar: (barPosition: number) => void;
   onSelectBeat: (barPosition: number, beat: number) => void;
   onSelectBlock: (startBar: number, endBar: number) => void;
+  onOpenEdit?: (barPosition: number, beat: number) => void;
   onClearBar: (barPosition: number) => void;
   onClearBeat: (barPosition: number, beat: number) => void;
   onClearSection: () => void;
@@ -29,6 +30,7 @@ export function ChordChartGrid({
   onSelectBar,
   onSelectBeat,
   onSelectBlock,
+  onOpenEdit,
   onClearBar,
   onClearBeat,
   onClearSection,
@@ -194,6 +196,7 @@ export function ChordChartGrid({
                       onSelectBeat(barPos, beat);
                       onSelectBlock(block.startBarNumber, block.endBarNumber);
                     }}
+                    onOpenEdit={onOpenEdit}
                     onClearBar={onClearBar}
                     onClearBeat={onClearBeat}
                   />

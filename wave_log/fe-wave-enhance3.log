@@ -1,0 +1,80 @@
+# FE Wave Enhance 3 진행 및 기술 참조 로그
+
+- 파일명: `wave_log/fe-wave-enhance3.log`
+- 실행 일시: 2026-09-22
+- 대상 범위: 코드 팔레트 인라인 상세 설정(Inline Chord Builder/Inspector) 및 실시간 화성 분석 즉각 피드백 UI 구현 완료
+
+---
+
+## 1. 배경 및 문제의식 (Why Inline Chord Builder over Modal)
+
+기존 코드 상세 화성 속성(Quality, Extension/Tension, Slash Bass Inversion, Modal Interchange 등) 편집 시 모달(`ChordEditModal.tsx`)을 띄워 작업하는 방식은 다음과 같은 명확한 한계와 비효율성이 존재했습니다:
+1. **시각적 차폐로 인한 피드백 단절**:
+   - 모달이 전체 화면을 딤(dim) 처리하여 우측의 기법 분석 카드(`TechniqueCard`) 및 추천 패널(`RecommendationPanel`)을 완전히 가림.
+   - 텐션(`maj7`, `9`)이나 전위(`/3`), 세컨더리 도미넌트 등을 시험해볼 때, 매번 `속성 선택 → [저장] 클릭 → 모달 닫힘 → 우측 분석 카드 확인`의 5~6단계를 거쳐야 하므로 탐색적 작곡/편곡 피드백 루프가 심각하게 지연됨.
+2. **연속 편집 마찰**:
+   - 여러 마디에 걸쳐 고급 화성을 입력할 때 매 마디마다 모달을 열고 닫는 불필요한 반복 작업 발생.
+
+---
+
+## 2. 세부 구현 내역
+
+### 2.1 `InlineChordBuilder.tsx` 컴포넌트 신규 구현
+- **경로**: `app/components/chordchart/InlineChordBuilder.tsx`
+- **헤더 및 타깃 인디케이터**:
+  - 선택된 마디/박자 및 실시간 적용 코드명(`realizeChord` 활용) 렌더링 (예: `[Verse] #2마디 1박 | 실시간 적용: G7 (V dominant 7)`)
+  - 마디 미선택 시 직관적인 안내 가이드 배너 표시
+- **1. 화음 성질 (Quality)**:
+  - Major(장화음), Minor(단화음), Dominant 7(도미넌트), Diminished(디미니쉬), Half-Dim(m7b5)
+  - 선택된 성질에 활성 인디고 하이라이트 제공
+- **2. 텐션 및 확장 (Extension)**:
+  - `COMPATIBLE_EXTENSIONS` 규칙을 적용하여 선택된 성질과 비호환되는 텐션은 비활성화(disabled)
+  - 3화음(none), 7, maj7, 9, sus4, m7b5 지원 및 원클릭 변경
+- **3. 베이스 전위 (Inversion / Slash Bass)**:
+  - Root(기본), /3(1전위: Major는 III, Minor는 bIII), /5(2전위: V), /7(3전위: Dominant는 bVII, Major는 VII)
+  - 클릭 즉시 베이스 도수가 자동 계산되어 슬래시 코드로 실시간 적용
+- **4. 화성학 퀵 프리셋 (Harmonic Presets)**:
+  - 세컨더리 도미넌트: `V7/ii (VI7)`, `V7/V (II7)`, `V7/vi (III7)`, `V7/IV (I7)`
+  - 모달 인터체인지: `IVm (iv)`, `bVI`, `bVII`
+  - 슬래시 코드: `V/VII`, `I/III`
+  - 텐션: `Imaj7`, `IVmaj7`, `Vsus4`
+  - 원클릭으로 속성 세트를 즉각 교체 및 분석 평가
+- **5. 보조 액션**:
+  - `[3화음 리셋]`, `[코드 삭제]`, `[모달 팝업]`(정밀 편집용)
+
+### 2.2 `WorkspaceShell.tsx` 팔레트 드로어 결합 및 실시간 연동
+- 상단 다이어토닉 7코드 팔레트 우측에 `[⚙️ 코드 상세 설정 ▼/▲]` 토글 버튼 추가
+- `isDetailExpanded` 토글 상태에 따라 아코디언 드로어 형태로 부드럽게 노출
+- 현재 선택된 마디의 코드를 `useMemo`로 양방향 바인딩하여 실시간 동기화
+- 인라인 빌더의 속성 클릭 시:
+  1. `setChord`로 클라이언트 드래프트 상태 즉시 변경
+  2. `runTechniqueAnalysis`로 `POST /api/analysis` 비동기 호출
+  3. 우측 `TechniqueCard`가 가려짐 없이 **0.1초 만에 실시간으로 신뢰도, 분석 근거, 종지 패턴을 즉시 갱신**
+
+### 2.3 전체 송폼 뷰(`FullSongFormView.tsx`) 연동
+- 상단 팔레트 및 인라인 빌더가 `FullSongFormView` 상단에도 동일하게 배치되어 있으므로, 전체 송폼 모드에서도 임의의 구간, 임의의 마디를 클릭하면 해당 마디가 인라인 빌더에 즉시 포커스되며 즉각적인 화성 수정 및 분석 동기화 지원.
+
+---
+
+## 3. 테스트 및 품질 검증 결과
+
+- **신규 테스트 파일**: `test/fe-enhancement-inline-builder.test.ts` (3개 테스트 시나리오)
+  1. `FE Inline Builder: Extension compatibility and inversion degree mapping` (텐션 호환성 및 전위 도수 매핑 검증)
+  2. `FE Inline Builder: Direct chord mutation updates draft accurately` (인라인 조작 시 드래프트 상태 불변 갱신 검증)
+  3. `FE Inline Builder: Live analysis feedback trigger upon inline mutation` (인라인 조작 시 실시간 모달 인터체인지/세컨더리 도미넌트 분석 연동 검증)
+- **검증 지표**:
+  - `npm test`: **75 tests passing (0 failures, 100% pass)**
+  - `npm run typecheck`: **Clean (0 errors)**
+  - `npm run build`: **Next.js Production Build 100% Success (15 routes)**
+
+---
+
+## 4. 작업 산출물 및 변경 파일 요약
+
+| 파일 경로 | 작업 내용 |
+|---|---|
+| `app/components/chordchart/InlineChordBuilder.tsx` | 인라인 화성 상세 설정 드로어 컴포넌트 신규 구현 |
+| `app/components/workspace/WorkspaceShell.tsx` | 상단 팔레트에 드로어 토글 버튼, 양방향 바인딩, 즉시 분석 연동 |
+| `test/fe-enhancement-inline-builder.test.ts` | 신규 인라인 빌더 및 실시간 분석 트리거 통합 테스트 |
+| `fe-enhancements.md` | Section 6 계획 및 체크리스트 전체 완료(`[x]`) 처리 |
+| `wave_log/fe-wave-enhance3.log` | 기술 참조 및 진행 내역 상세 로그 (본 파일) |

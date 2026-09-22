@@ -48,8 +48,15 @@ export function createUserProgression(database: DatabaseSync, input: UserProgres
 }
 
 export function listUserProgressions(database: DatabaseSync, query = "") {
-  if (!query.trim()) return database.prepare("SELECT id, name, description, created_at FROM user_progressions ORDER BY created_at DESC, id DESC").all();
-  return database.prepare("SELECT id, name, description, created_at FROM user_progressions WHERE name LIKE ? ORDER BY created_at DESC, id DESC").all(`%${query.trim()}%`);
+  const rows = (!query.trim()
+    ? database.prepare("SELECT id, name, description, created_at FROM user_progressions ORDER BY created_at DESC, id DESC").all()
+    : database.prepare("SELECT id, name, description, created_at FROM user_progressions WHERE name LIKE ? ORDER BY created_at DESC, id DESC").all(`%${query.trim()}%`)) as unknown as Array<{ id: number; name: string; description: string | null; created_at: string }>;
+
+  return rows.map((row) => {
+    const formTags = database.prepare("SELECT form_tag FROM user_progression_form_tags WHERE progression_id = ? ORDER BY form_tag").all(row.id) as unknown as Array<{ form_tag: string }>;
+    const steps = database.prepare("SELECT position, degree, quality, extension, bass_degree FROM user_progression_steps WHERE progression_id = ? ORDER BY position").all(row.id) as unknown as Array<ChordStep & { position: number }>;
+    return { ...row, formTags: formTags.map((tag) => tag.form_tag), steps };
+  });
 }
 
 export function getUserProgression(database: DatabaseSync, id: number) {
@@ -62,10 +69,7 @@ export function getUserProgression(database: DatabaseSync, id: number) {
 
 export function searchUserProgressions(database: DatabaseSync, tokens: string[]) {
   const progressions = listUserProgressions(database);
-  return progressions
-    .map((progression) => getUserProgression(database, Number(progression.id)))
-    .filter((progression): progression is NonNullable<typeof progression> => progression !== null)
-    .filter((progression) => matchesDegreePattern(progression.steps, tokens));
+  return progressions.filter((progression) => matchesDegreePattern(progression.steps, tokens));
 }
 
 export function deleteUserProgression(database: DatabaseSync, id: number): boolean {

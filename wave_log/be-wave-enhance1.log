@@ -1,0 +1,37 @@
+# Backend Technique Enhancement Step 2 Log
+
+## Status
+
+- Started: 2026-09-21
+- Scope: shared harmonic math and calculation deduplication
+- Status: Complete
+
+## Implemented
+
+- Added `app/lib/shared/domain/harmonic-math.ts`.
+- Added server re-export at `app/lib/server/domain/harmonic-math.ts`.
+- Refactored shared `chord-realizer.ts` to use the harmonic math module.
+- Refactored `technique-analyzer.ts` to use shared degree pitch calculations.
+- Added degree pitch-class and tonic pitch-class conversion.
+- Added semitone interval calculation.
+- Added perfect-fifth-down and semitone-up relationship helpers.
+- Added diatonic-degree validation.
+- Added bass motion classification: stepwise down, stepwise up, pedal, none.
+- Added `test/harmonic-math.test.ts`.
+
+## Issue / Resolution
+
+### BE-E1-001: Perfect-fifth direction naming
+
+- Observation: A progression such as `V -> I` has a pitch-class interval of 5 when calculated from the first degree to the target degree, while the reverse subtraction used by secondary-dominant detection is 7.
+- Resolution: `isPerfectFifthDown(from, to)` uses the semantic progression direction and checks interval 5. Existing secondary-dominant logic retains its reverse subtraction because it asks whether the changed dominant is seven semitones above the target.
+- Test: Both shared interval helpers and existing secondary-dominant regression behavior pass.
+
+## Verification
+
+```text
+npm run typecheck -> passed
+npm test -> passed (60 tests)
+```
+
+Step 2 is complete. The next enhancement step is the pluggable `TechniqueMatcher` architecture.

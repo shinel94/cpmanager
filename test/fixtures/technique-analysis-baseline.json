@@ -1,0 +1,21 @@
+{
+  "request": {
+    "tonic": "C",
+    "sectionName": "Bridge",
+    "blockStart": 1,
+    "target": { "barPosition": 2, "beat": 1 },
+    "before": { "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+    "after": { "degree": "IV", "quality": "minor", "extension": null, "bass_degree": null },
+    "bars": [
+      { "position": 1, "chords": [{ "beat": 1, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null }] },
+      { "position": 2, "chords": [{ "beat": 1, "degree": "IV", "quality": "minor", "extension": null, "bass_degree": null }] },
+      { "position": 3, "chords": [] },
+      { "position": 4, "chords": [] }
+    ]
+  },
+  "expected": {
+    "id": 1,
+    "name": "모달 인터체인지",
+    "description": "같은 으뜸음의 평행조에서 화음을 빌려 온 진행입니다."
+  }
+}

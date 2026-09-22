@@ -8,12 +8,16 @@ import type { SectionDraft } from "@/app/types/client";
 
 export type SectionListProps = {
   activeSectionId: string | null;
+  viewMode?: "single" | "all";
+  onToggleViewMode?: (mode: "single" | "all") => void;
   onSelectSection: (id: string) => void;
   onOpenAddModal: () => void;
 };
 
 export function SectionList({
   activeSectionId,
+  viewMode = "single",
+  onToggleViewMode,
   onSelectSection,
   onOpenAddModal,
 }: SectionListProps) {
@@ -29,6 +33,10 @@ export function SectionList({
     newCount: number;
     trimmedBarNumber: number;
   } | null>(null);
+
+  // Drag and Drop state for section reordering
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   const handleDecrementBars = (sec: SectionDraft) => {
     if (sec.bar_count <= 1) return;
@@ -59,6 +67,36 @@ export function SectionList({
 
   return (
     <div className="space-y-3">
+      {/* View Mode Toggle: Single Section vs Full Song Form */}
+      <div className="flex rounded-lg bg-slate-100 p-0.5 border border-slate-200 text-xs">
+        <button
+          type="button"
+          onClick={() => onToggleViewMode?.("single")}
+          className={`flex-1 py-1.5 px-2 rounded-md font-semibold text-center transition cursor-pointer flex items-center justify-center gap-1.5 ${
+            viewMode === "single"
+              ? "bg-white text-indigo-700 shadow-2xs font-bold"
+              : "text-slate-600 hover:text-slate-900"
+          }`}
+          data-testid="toggle-view-single"
+        >
+          <span>🔍</span>
+          <span>구간별 보기</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => onToggleViewMode?.("all")}
+          className={`flex-1 py-1.5 px-2 rounded-md font-semibold text-center transition cursor-pointer flex items-center justify-center gap-1.5 ${
+            viewMode === "all"
+              ? "bg-white text-indigo-700 shadow-2xs font-bold ring-1 ring-indigo-300"
+              : "text-slate-600 hover:text-slate-900"
+          }`}
+          data-testid="toggle-view-all"
+        >
+          <span>📄</span>
+          <span>전체 송폼 보기</span>
+        </button>
+      </div>
+
       <div className="flex items-center justify-between">
         <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
           송폼 구간 ({project.sections.length})
@@ -90,13 +128,52 @@ export function SectionList({
             const isActive = sec.id === activeSectionId;
             const isFirst = idx === 0;
             const isLast = idx === project.sections.length - 1;
+            const isDragging = draggedIndex === idx;
+            const isDragOver = dragOverIndex === idx && draggedIndex !== idx;
 
             return (
               <div
                 key={sec.id}
+                draggable
+                onDragStart={(e) => {
+                  setDraggedIndex(idx);
+                  e.dataTransfer.setData("text/plain", idx.toString());
+                  e.dataTransfer.effectAllowed = "move";
+                }}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = "move";
+                  if (dragOverIndex !== idx) {
+                    setDragOverIndex(idx);
+                  }
+                }}
+                onDragLeave={(e) => {
+                  if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+                  if (dragOverIndex === idx) {
+                    setDragOverIndex(null);
+                  }
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (draggedIndex !== null && draggedIndex !== idx) {
+                    reorderSections(draggedIndex, idx);
+                    toast.info(`'${sec.name}' 구간 순서가 변경되었습니다.`);
+                  }
+                  setDraggedIndex(null);
+                  setDragOverIndex(null);
+                }}
+                onDragEnd={() => {
+                  setDraggedIndex(null);
+                  setDragOverIndex(null);
+                }}
                 onClick={() => onSelectSection(sec.id)}
-                className={`p-2.5 rounded-xl border transition cursor-pointer group ${
-                  isActive
+                className={`p-2.5 rounded-xl border transition cursor-pointer group select-none ${
+                  isDragging
+                    ? "opacity-40 scale-[0.98] border-dashed border-indigo-400 bg-indigo-50/40 shadow-inner"
+                    : isDragOver
+                    ? "border-t-2 border-t-indigo-600 ring-2 ring-indigo-400/50 bg-indigo-50/60 shadow-md"
+                    : isActive
                     ? "border-indigo-500 bg-indigo-50/70 shadow-xs"
                     : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
                 }`}
@@ -104,6 +181,12 @@ export function SectionList({
                 {/* Header: Name, Active Badge & Reorder/Delete */}
                 <div className="flex items-center justify-between gap-2 mb-2">
                   <div className="flex items-center gap-1.5 min-w-0">
+                    <span
+                      className="text-slate-400 hover:text-indigo-600 cursor-grab active:cursor-grabbing p-0.5 select-none text-xs font-mono"
+                      title="드래그하여 순서 변경"
+                    >
+                      ⋮⋮
+                    </span>
                     <span
                       className={`text-xs font-bold truncate ${
                         isActive ? "text-indigo-950" : "text-slate-800"
@@ -122,6 +205,7 @@ export function SectionList({
                   <div
                     className="flex items-center gap-0.5"
                     onClick={(e) => e.stopPropagation()}
+                    onDragStart={(e) => e.stopPropagation()}
                   >
                     <button
                       type="button"
@@ -156,6 +240,7 @@ export function SectionList({
                 <div
                   className="flex items-center justify-between pt-1 border-t border-slate-100 text-xs text-slate-500"
                   onClick={(e) => e.stopPropagation()}
+                  onDragStart={(e) => e.stopPropagation()}
                 >
                   <span className="text-[11px] font-medium text-slate-400">
                     마디 수

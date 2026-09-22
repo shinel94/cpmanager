@@ -1,0 +1,115 @@
+# FE Wave Enhance 2 진행 및 기술 참조 로그
+
+- 파일명: `wave_log/fe-wave-enhance2.log`
+- 실행 일시: 2026-09-22
+- 대상 범위: 화성학 분석 엔진 업그레이드 연동 (`POST /api/analysis`), 신뢰도(Confidence) & 증거(Evidence) & 전위/차용/도수 메타데이터 UI, 4마디 블록 종지 및 진행 패턴(Cadence / ii-V-I / Bassline) 리포트, 복수 대안 해석(Alternatives) 아코디언, 분석 트리거 다변화 및 전체 송폼 뷰 실시간 동기화
+
+---
+
+## 1. 작업 개요 및 배경
+
+백엔드 화성 분석 엔진(Wave A, B, C / Steps 0~6)이 고도화되어 단순 기법명(`id`, `name`, `description`) 외에도 다음의 고차원 화성 분석 데이터를 반환하게 되었습니다:
+1. **신뢰도 지표 (`confidence: number`)**: 0.0 ~ 1.0 (예: 98% 일치)
+2. **분석 근거 (`evidence: string[]`)**: 이론적 판정 사유 및 규칙 일치 증거 목록
+3. **세부 음악적 메타데이터**:
+   - `targetDegree`: 세컨더리 도미넌트 등의 해결 목표 도수 (예: "II", "V")
+   - `sourceMode`: 모달 인터체인지 차용 선법 (예: "Parallel minor", "Dorian")
+   - `inversion`: 슬래시 코드 베이스 전위 정보 (예: "1st Inversion", "3rd Inversion")
+4. **4마디 블록 종지 및 진행 패턴 (`progressionPattern`)**:
+   - 정격 종지(Authentic Cadence), 변격 종지(Plagal Cadence), 반종지(Half Cadence), 기만 종지(Deceptive Cadence)
+   - ii - V - I 진행, IV - V - I 진행, 8마디 서클 오브 피프스(Circle of Fifths), 반복 루프 진행
+   - 하강 베이스 라인 진행 (Descending Bass Line)
+5. **대안 해석 (`alternatives`, `progressionAlternatives`)**:
+   - 다의적 화성 진행에 대한 2순위 대안 해석 및 후보군 제공
+
+프론트엔드에서는 이러한 리치 분석 데이터를 온전히 수용하여 사용자에게 직관적이고 시각적인 화성학 피드백을 전달할 수 있도록 클라이언트 타입 체계, API 연동부, UI 카드(`TechniqueCard.tsx`), 그리고 전체 송폼 뷰(`FullSongFormView.tsx`)에 걸쳐 전면적인 통합을 완료했습니다.
+
+---
+
+## 2. 세부 구현 내역
+
+### 2.1 클라이언트 타입 체계 확장 (`app/types/client.ts`)
+- `ProgressionPatternFeedback`: 종지 및 진행 패턴 타입 (`type: "cadence" | "progression" | "bassline"`, `name`, `description`, `bars`)
+- `TechniqueAlternative`: 기법 대체 해석 타입 (`id`, `name`, `description`, `confidence`, `evidence`)
+- `TechniqueFeedback` 인터페이스 확장:
+  ```typescript
+  export type TechniqueFeedback = {
+    id: number;
+    name: string;
+    description: string;
+    targetBarPosition?: number;
+    targetBeat?: number;
+    confidence?: number;
+    evidence?: string[];
+    targetDegree?: string;
+    sourceMode?: string;
+    inversion?: string;
+    progressionPattern?: ProgressionPatternFeedback | null;
+    progressionAlternatives?: ProgressionPatternFeedback[];
+    alternatives?: TechniqueAlternative[];
+  };
+  ```
+
+### 2.2 API 호출부 및 분석 트리거 정규화 (`WorkspaceShell.tsx`)
+1. **`blockStart: 1` 하드코딩 버그 수정**:
+   - 기존에는 8마디 섹션의 5~8마디(블록 2)를 편집할 때도 `blockStart: 1`이 고정 전송되던 문제를 수정하여, 대상 마디 위치에 따른 동적 블록 시작점(`blockStart = Math.floor((pos - 1) / 4) * 4 + 1`)을 정확하게 계산하여 전달하도록 수정했습니다.
+2. **`bars` 배열 정규화 전달**:
+   - 각 마디의 비어있지 않은 박자(`beat: c.beat ?? 1`)를 정확히 매핑하여 백엔드 분석 엔진에 전달.
+3. **분석 트리거 경로 다변화**:
+   - 상단 다이어토닉 7코드 퀵 버튼 클릭 시 호출
+   - 키보드 숫자 단축키 (`1~7`) 입력 시 호출
+   - 코드 속성 편집 모달(`ChordEditModal`)에서 텐션/슬래시 코드 속성 수정 저장 시 호출
+   - 4마디 추천 진행(`RecommendationPanel`) 또는 사용자 진행 등록 모달에서 코드를 일괄 적용(`applyRecommendation`) 시 마지막 마디 기준으로 블록 분석 자동 갱신
+   - 개별 마디 클릭(단일 마디 선택) 시 기존 코드가 존재하는 경우 즉시 해당 마디 및 4마디 블록 분석을 트리거하여 사용자에게 실시간 피드백 제공
+4. **순수 종지/진행 패턴 Fallback 처리**:
+   - 코드 변형 기법(`technique`)이 없는 순수 다이어토닉 마디라도 4마디 블록 단위에서 종지(예: V → I 정격 종지)가 형성된 경우, 백엔드가 반환한 `progressionPattern`을 기반으로 `lastTechnique` 피드백을 구성하여 리포트에 노출.
+
+### 2.3 `TechniqueCard.tsx` 화성학 리포트 카드 UI 개편
+- **신뢰도(Confidence) 게이지 & 배지**:
+  - `confidence >= 0.9`: 녹색 배지 (`높은 신뢰도 (98%)`)
+  - `confidence >= 0.7`: 블루/스카이 배지 (`보통 신뢰도 (75%)`)
+  - 신뢰도 프로그레스 바 시각화
+- **이론적 메타 칩 (Meta Tags)**:
+  - `targetDegree`: `목표 도수: II` (인디고 배지)
+  - `sourceMode`: `차용 모드: Parallel minor` (퍼플 배지)
+  - `inversion`: `전위: 1st Inversion` (엠버 배지)
+- **분석 근거(Evidence) 리스트**:
+  - 판정 근거 문장을 체크 아이콘(`✓`)과 함께 명확한 불릿 리스트로 노출
+- **4마디 블록 종지 및 진행 패턴 서브카드**:
+  - 패턴 유형별 아이콘 부여:
+    - 종지(Cadence): 🔔
+    - 일반 진행(Progression): 🔄
+    - 베이스라인(Bassline): 📉
+  - 패턴명, 대상 마디 칩(`3마디`, `4마디`), 패턴 설명 렌더링
+- **대안 해석(Alternatives) 인터랙티브 아코디언**:
+  - `alternatives` 또는 `progressionAlternatives`가 존재하는 경우 `다른 화성학적 해석 보기 (N)` 접이식 아코디언 제공
+  - 클릭 시 대안 기법명 및 대안 설명, 신뢰도를 투명하게 열람 가능
+
+### 2.4 전체 송폼 뷰(`FullSongFormView.tsx`) 연동
+- 전체 송폼 모드에서도 특정 구간의 마디를 클릭하거나 코드를 변경하면, 상단 및 우측의 `TechniqueCard`가 해당 마디와 구간의 4마디 블록을 기준으로 완벽하게 실시간 동기화됩니다.
+
+---
+
+## 3. 테스트 및 검증 결과
+
+- **신규 테스트 파일**: `test/fe-enhancement-analysis.test.ts` (3개 테스트 시나리오 추가)
+  1. `POST /api/analysis` 통합 테스트: 세컨더리 도미넌트, 모달 인터체인지의 `confidence`, `evidence`, `targetDegree`, `sourceMode`, `alternatives`, `progressionPattern` 수신 검증
+  2. 순수 종지/진행 패턴 Fallback 테스트: 기법이 null일 때 종지 패턴 기반 `TechniqueFeedback` 수화 무결성 검증
+  3. 4마디 블록 분할 및 활성 마디 평가 테스트: 8마디 구간의 1~4마디 및 5~8마디 동적 블록 경계 계산 검증
+- **전체 테스트 스위트 결과**:
+  - `npm test`: **72 tests passing (0 failures, 100% pass)**
+  - `npm run typecheck`: **TypeScript v5.x No Errors (clean)**
+  - `npm run build`: **Next.js Production Build 100% Success** (모든 15개 정적/동적 라우트 컴파일 완료)
+
+---
+
+## 4. 작업 산출물 및 변경 파일 요약
+
+| 파일 경로 | 작업 내용 |
+|---|---|
+| `app/types/client.ts` | `ProgressionPatternFeedback`, `TechniqueAlternative`, `TechniqueFeedback` 리치 필드 선언 |
+| `app/components/workspace/WorkspaceShell.tsx` | 동적 `blockStart` 계산 적용, 4개 트리거 연계, 종지 패턴 fallback 매핑 |
+| `app/components/analysis/TechniqueCard.tsx` | Confidence 게이지, 태그 칩, Evidence 목록, 종지 서브카드, 대안 아코디언 UI 구현 |
+| `test/fe-enhancement-analysis.test.ts` | 신규 통합 및 데이터 파싱 유닛 테스트 (3개 케이스) |
+| `fe-enhancements.md` | 분석 엔진 연동 검토 결과, 액션 플랜, 체크리스트 업데이트 |
+| `wave_log/fe-wave-enhance2.log` | 기술 참조 및 진행 내역 상세 로그 (본 파일) |

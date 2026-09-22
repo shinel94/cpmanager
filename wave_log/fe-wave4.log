@@ -1,0 +1,89 @@
+# FE Wave 4 진행 로그
+
+- 실행 일시: 2026-09-22
+- 대상 범위: 다이어토닉 코드 팔레트 & 코드 상세 속성 편집기 (`ChordEditModal`), 텐션/슬래시/모달인터체인지/세컨더리도미넌트 퀵 프리셋, 실시간 코드 프리뷰, 비트/마디 단위 속성 편집 연동
+
+---
+
+## 1. 작업 개요
+
+FE Wave 3에서 구축된 송폼 편집기 및 4/4 코드 차트 그리드 위에, 입문자도 직관적으로 복잡한 화성 속성을 다룰 수 있는 **코드 상세 속성 편집기(`ChordEditModal`)**와 **다이어토닉 팔레트 연동 인터랙션**을 구현했습니다.
+
+기존에는 7개 기본 다이어토닉 3화음/7화음만 차트에 주입할 수 있었으나, Wave 4를 통해 다음과 같은 고급 화성 편집 기능이 완성되었습니다:
+1. **도수(Degree) 선택**: 기본 7개 다이어토닉 도수(`I`~`VII`) 및 6개 임시표/차용 도수(`bII`, `bIII`, `bV`, `bVI`, `bVII`, `#IV`)
+2. **화음 유형(Quality)**: `major`, `minor`, `dominant`, `diminished`, `half-diminished`
+3. **텐션/확장(Extension)**: 화음 품질에 따른 호환 텐션 필터링 (`none`, `maj7`, `7`, `9`, `sus4`, `m7b5`)
+4. **베이스 도수(Slash Chord)**: 슬래시 코드용 분수 베이스(`Root`, `/I` ~ `/VII`) 지원
+5. **자주 쓰는 코드 변형 퀵 프리셋 16종**:
+   - 모달 인터체인지: `iv (Fm)`, `bVI (Ab)`, `bVII (Bb)`, `bIII (Eb)`
+   - 세컨더리 도미넌트: `V7/ii (A7)`, `V7/V (D7)`, `V7/vi (E7)`, `V7/IV (C7)`
+   - 슬래시 코드 전위/페달: `V/VII (G/B)`, `I/III (C/E)`, `IV/I (F/C)`, `V/I (G/C)`
+   - 텐션: `Imaj7`, `IVmaj7`, `Vsus4`, `vim7`
+6. **실시간 실제 코드명 프리뷰**: 현재 곡의 장조(Tonic)에 맞춰 조합된 코드명(예: `Cmaj7`, `G7/B`, `Fm`, `Ab`)을 실시간으로 즉시 렌더링
+
+### 생성 및 갱신된 산출물
+
+1. `app/components/chordchart/ChordEditModal.tsx` (신규 생성):
+   - 대형 실시간 코드 프리뷰 헤더 (현재 구간, 마디 번호, 박자, 조성, 도수/속성 태그 노출)
+   - 퀵 프리셋 칩 목록 (클릭 한 번으로 도수, 속성, 텐션, 슬래시 베이스 일괄 설정)
+   - 다이어토닉/임시표 도수 선택 그리드
+   - 화음 유형(Quality) 선택 및 화음별 호환 텐션 자동 전환
+   - 베이스 도수(Slash chord) 선택기
+   - 하단 [코드 삭제(비우기)], [취소], [코드 적용하기] 액션 바
+2. `app/components/chordchart/BarCard.tsx`:
+   - `onOpenEdit` 콜백 인터페이스 추가
+   - 마디 더블클릭 시 편집 모달 즉시 오픈
+   - 마디 선택 시 헤더에 `[✏️ 속성]` 버튼 노출
+   - 4박 분할 뷰에서 박자 선택 시 `[편집]` 버튼 노출
+   - 1마디 1코드 뷰에서 슬래시 베이스 태그(`/{bass_degree}`) 앰버 배지 노출
+3. `app/components/chordchart/ChordChartGrid.tsx`:
+   - `onOpenEdit` 프로퍼티를 `BarCard`로 하향 전달
+4. `app/components/workspace/WorkspaceShell.tsx`:
+   - 다이어토닉 팔레트 상단 헤더에 `[✏️ 코드 상세 편집]` 버튼 추가
+   - `isChordEditOpen` 모달 상태 관리 및 단축키(1~7) 입력 간섭 방지 가드 장착
+   - `ChordEditModal` 결합 (현재 선택된 마디/박의 기존 코드 자동 re-hydrate 및 `setChord`/`clearChord` 연동)
+5. `test/fe-wave4-chordedit.test.ts` (신규 생성):
+   - 텐션 코드(`maj7`, `7`, `sus4`) 및 `COMPATIBLE_EXTENSIONS` 검증
+   - 슬래시 코드(`G/B`, `C/E`, `F/C`) 및 정규화/실제 코드명 계산 검증
+   - 모달 인터체인지(`iv`, `bVI`, `bVII`) 및 세컨더리 도미넌트(`VI7`, `II7`) 검증
+   - 백엔드 페이로드 규격에 맞는 복합 코드 직렬화 무결성 검증 (4종 신규 테스트 전체 통과)
+
+---
+
+## 2. 발생한 기술적 이슈 및 해결 내역
+
+### FE-W4-001: 화음 유형(Quality) 변경 시 비호환 텐션(Extension)으로 인한 정규화 예외 방지
+- **문제**:
+  - `chord-catalog.ts`의 `normalizeStep`은 `COMPATIBLE_EXTENSIONS[quality].includes(extension)` 규칙을 엄격하게 검증합니다.
+  - 예를 들어 사용자가 `major` 상태에서 `maj7` 텐션을 선택한 후, 화음 유형을 `dominant`나 `diminished`로 변경할 경우, `maj7`은 해당 품질과 호환되지 않아 저장 시 `Incompatible quality and extension` 예외가 발생할 수 있습니다.
+- **해결**:
+  - `ChordEditModal`의 `handleQualityChange` 핸들러에서 화음 품질 변경 시 현재 선택된 `extension`이 새로운 품질의 `COMPATIBLE_EXTENSIONS`에 포함되는지 즉시 검사했습니다.
+  - 포함되지 않을 경우:
+    - `dominant`인 경우 표준 세븐스(`"7"`)로 자동 폴백
+    - `half-diminished`인 경우 `"m7b5"`로 자동 폴백
+    - `diminished` 및 일반 3화음인 경우 `null`로 자동 재설정하여 어떤 조작 순서에서도 유효한 코드 조합만 유지되도록 보호했습니다.
+
+### FE-W4-002: 코드 상세 편집 모달 오픈 중 배경 단축키(1~7, Delete) 간섭 방지
+- **문제**:
+  - 마디가 선택된 상태에서 `ChordEditModal`이 열려 있을 때, 사용자가 키보드 입력을 시도하면 배경의 `handleKeyDown` 이벤트가 동작하여 마디 코드가 의도치 않게 삭제되거나 덮어써질 위험이 있었습니다.
+- **해결**:
+  - `WorkspaceShell`의 `handleKeyDown` 가드 조건에 `isChordEditOpen` 플래그를 추가하여 모달이 열려 있는 동안에는 전역 단축키가 안전하게 차단되도록 처리했습니다.
+
+### FE-W4-003: 마디 단위(1박) 및 4박 분할 단위(개별 비트) 편집 대상의 정밀 분기
+- **문제**:
+  - 1마디에 여러 코드가 입력된 경우, 사용자가 3번째 박자를 선택하고 "속성 편집"을 눌렀을 때 1박자의 코드가 편집창에 뜨거나 3박자가 아닌 1박자에 코드가 덮어써지는 문제가 발생할 수 있었습니다.
+- **해결**:
+  - `currentTargetBeat = selectedBeat || 1`을 기준으로 편집 대상 코드를 검색하고, 모달 저장 핸들러에서 `setChord` 호출 시 정확한 `selectedBeat`를 전달하여 다중 코드 마디에서도 개별 비트 코드를 정밀하게 수정/삭제할 수 있도록 구현했습니다.
+
+---
+
+## 3. 검증 결과 (Gate `[G4-FE]` 통과)
+
+- **타입 검사**: `npm run typecheck` 통과 (TypeScript 에러 0건)
+- **단위/통합 테스트**: `npm test` 총 43개 테스트 전체 통과 (`43 passed`, 0 failed)
+  - FE Wave 4 신규 테스트 4종 전체 통과
+- **Next.js 프로덕션 빌드**: `npm run build` 성공 (컴파일 시간 ~1211ms)
+- **게이트 기준 충족 확인**:
+  - 코드 차트의 특정 마디를 클릭하여 다이어토닉 코드를 즉시 입력하거나, 모달에서 텐션(`maj7`, `7`, `9`, `sus4`), 슬래시 코드(`G/B`), 차용/세컨더리 도미넌트 코드로 수정 시 차트에 올바른 실제 코드명이 표시됨을 확인했습니다.
+
+---

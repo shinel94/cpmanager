@@ -1,0 +1,184 @@
+# FE Wave Enhance 0 진행 및 기술 참조 로그
+
+- 파일명: `wave_log/fe-wave-enhance0.log`
+- 실행 일시: 2026-09-22
+- 대상 범위: 4마디 추천 목록 실시간 반응형 자동 새로고침(Auto-refresh), 정렬 탭(`popularity`, `connectivity`, `diversity`, `random`) 유지, 코드 상태 지문(Fingerprint) 추적, 디바운스 최적화, 예외 상태 자동 전환
+
+---
+
+## 1. 작업 개요
+
+기존 4마디 추천 패널(`RecommendationPanel.tsx`)은 마디 수(`targetBars.length`)만 의존성으로 감지하여, 마디 안의 코드를 입력하거나 수정·삭제하더라도 추천 목록이 자동으로 갱신되지 않고 이전 목록을 유지하는 한계가 있었습니다.
+
+이번 작업을 통해 다음 핵심 개선 사항을 구현하고 검증했습니다:
+1. **코드 변경 실시간 반응 (Fingerprint Reactivity)**:
+   - 선택된 4마디 블록 내 임의의 마디/박자에 코드가 입력·수정·삭제되면 즉시 상태 지문이 변경되어 추천 API를 자동으로 호출합니다.
+2. **정렬 탭 보존 (Preserve Active Sort)**:
+   - 자동 갱신 시 사용자가 기존에 선택해 둔 정렬 기준(`activeSort`: `대중성 우선`, `코드 연결성 우선`, `다양성 우선`, `무작위`)을 그대로 유지한 채 1페이지부터 추천 결과를 갱신합니다.
+3. **디바운스(Debounce) 적용**:
+   - 키보드 연속 입력이나 모달에서의 빠른 조작 시 불필요한 API 중복 호출을 막기 위해 150ms 타이머를 적용하여 성능과 네트워크 비용을 최적화했습니다.
+4. **상태 자동 전환**:
+   - 4마디가 모두 채워지면 즉시 `all_filled` 예외 화면으로 전환되어 불필요한 추천 요청을 방지합니다.
+   - 1마디 복수 코드가 생성되면 `multi_chord_excluded` 예외 화면으로 전환됩니다.
+
+---
+
+## 2. 핵심 구현 아키텍처 및 코드 패턴
+
+### 2.1 코드 상태 지문 (Fingerprint) 생성
+마디 객체의 얕은 비교(`targetBars.length`) 대신, 각 마디의 비트, 도수, 화음 품질, 확장, 베이스 도수를 직렬화한 경량 문자열 지문을 계산합니다:
+
+```typescript
+const targetChordsFingerprint = targetBars
+  .map((b) =>
+    b.chords
+      .map(
+        (c) =>
+          `${c.beat}:${c.degree}${c.quality}${c.extension ?? ""}/${c.bass_degree ?? ""}`,
+      )
+      .join(";"),
+  )
+  .join("|");
+```
+
+- **효과**:
+  - 마디 수가 4개로 고정되어 있어도 내부 코드가 `C → Cmaj7`, `빈 마디 → Dm`, 또는 코드 삭제 시 지문 문자열이 변경되어 `useEffect`가 정확하게 1회 발동됩니다.
+
+### 2.2 디바운스 및 의존성 라이프사이클 (안정화 패턴)
+```typescript
+// Stable ref for fetch recommendations to avoid re-triggering useEffect
+const fetchRecommendationsRef = useRef(fetchRecommendations);
+fetchRecommendationsRef.current = fetchRecommendations;
+
+useEffect(() => {
+  setPage(1);
+  setExcludedDiversityGroups((prev) => (prev.length === 0 ? prev : []));
+  const timer = setTimeout(() => {
+    fetchRecommendationsRef.current(1, activeSort, []);
+  }, 150);
+
+  return () => clearTimeout(timer);
+}, [
+  section?.id,
+  startBar,
+  tonic,
+  activeSort,
+  targetBars.length,
+  targetChordsFingerprint,
+]);
+```
+
+- **핵심 동작**:
+  - `activeSort`가 변경되거나 `targetChordsFingerprint`가 변경되면 항상 `activeSort`를 인자로 전달하여 정렬 유형이 초기화되는 현상을 원천 방지합니다.
+  - 새 입력 컨텍스트가 형성되므로 `page`는 1로, `excludedDiversityGroups`는 빈 배열로 리셋됩니다.
+  - `fetchRecommendationsRef`를 도입하여 함수 참조 변경으로 인한 `useEffect` 재실행 순환 루프를 완벽히 차단했습니다.
+
+---
+
+## 3. 트러블슈팅: 코드 클릭/입력 시 발생한 무한 렌더링 에러 (`Maximum update depth exceeded`)
+
+### 3.1 에러 현상 및 로그
+송폼에서 코드를 클릭하거나 새로 입력/선택했을 때 아래와 같은 런타임 에러가 발생하며 브라우저 렌더링이 중단됨:
+
+```text
+Maximum update depth exceeded. This can happen when a component calls setState inside useEffect, but useEffect either doesn't have a dependency array, or one of the dependencies changes on every render.
+
+app/components/recommendation/RecommendationPanel.tsx (178:5) @ RecommendationPanel.useEffect
+
+  176 |   // Trigger fetch when block selection, sort, tonic, or chords within the block change
+  177 |   useEffect(() => {
+> 178 |     setPage(1);
+      |     ^
+  179 |     setExcludedDiversityGroups([]);
+  180 |     const timer = setTimeout(() => {
+  181 |       fetchRecommendations(1, activeSort, []);
+```
+
+### 3.2 근본 원인 분석 (Root Cause Analysis)
+1. **함수 의존성-상태 갱신 간의 순환 참조 (Circular Dependency Loop)**:
+   - `fetchRecommendations` 함수는 `useCallback`으로 래핑되어 있었으며, 의존성 배열에 `excludedDiversityGroups`가 포함되어 있었습니다.
+   - `useEffect`는 `fetchRecommendations`를 의존성 배열에 포함하고 있었습니다.
+   - `useEffect` 본문에서 `setExcludedDiversityGroups([])`를 호출할 때마다 새로운 빈 배열 인스턴스(`[]`)가 상태로 주입되어 상태의 참조값(`reference`)이 매번 변경되었습니다.
+2. **연쇄 트리거 메커니즘**:
+   - `setExcludedDiversityGroups([])` 호출 → `excludedDiversityGroups` 참조 변경
+   - `fetchRecommendations`의 `useCallback`이 새로운 함수 참조를 반환
+   - `useEffect`의 의존성인 `fetchRecommendations`가 변경된 것으로 인식되어 `useEffect` 재실행
+   - 다시 `setPage(1)` 및 `setExcludedDiversityGroups([])` 호출 → 무한 재실행 반복 (`Maximum update depth exceeded`)
+
+### 3.3 해결 방법 (Resolution)
+1. **`useRef`를 통한 비동기 함수 참조 분리**:
+   - `const fetchRecommendationsRef = useRef(fetchRecommendations); fetchRecommendationsRef.current = fetchRecommendations;`를 선언.
+   - `useEffect` 타이머 콜백에서 `fetchRecommendationsRef.current(...)`로 호출하고, `fetchRecommendations`를 `useEffect`의 의존성 배열에서 제거함.
+2. **상태 참조 동일성 보존 (State Equality Guard)**:
+   - `setExcludedDiversityGroups([])` 대신 함수형 업데이트를 사용하여 이미 빈 배열인 경우 기존 참조를 유지하도록 방어 코드 적용:
+     ```typescript
+     setExcludedDiversityGroups((prev) => (prev.length === 0 ? prev : []));
+     ```
+3. **원시값(Scalar) 기반 의존성 엄격화**:
+   - `useEffect` 의존성 배열을 `section?.id`, `startBar`, `tonic`, `activeSort`, `targetBars.length`, `targetChordsFingerprint` 등 원시 타입(Primitive/Scalar: string, number)으로만 엄격하게 한정하여 불필요한 리렌더링 및 참조 흔들림을 원천 차단.
+
+---
+
+## 4. 추후 작업 시 참고 자료 (Technical Reference & Cheat-sheet)
+
+다음 작업인 **기능 2: 전체 송폼 보기 화면 (Full Song Form Overview & Direct Edit)** 구현 시 반드시 확인해야 할 도메인 규칙 및 데이터 흐름 가이드입니다.
+
+### 4.1 송폼 및 마디/코드 데이터 구조 (`ProjectDraftContext`)
+- **전체 송폼 접근**:
+  - `const { project, updateSectionBars, removeSection, reorderSections, setChord, clearChord, clearBar } = useProjectDraft();`
+  - `project.sections`: `SectionDraft[]` 배열로, `position: 0..N-1` 순차 정수 색인을 가집니다.
+  - 각 `section.bars`: `BarDraft[]` 배열로, `position: 1..bar_count` 순차 정수 색인을 가집니다.
+  - 각 `bar.chords`: `BarChordDraft[]` 배열로, `beat: 1..4`를 가집니다.
+
+### 4.2 송폼 순서 동기화 매커니즘
+- 좌측 `SectionList.tsx`에서 드래그 앤 드롭 또는 `▲`/`▼` 버튼을 클릭하면 `reorderSections(fromIndex, toIndex)` 액션이 실행됩니다:
+  ```typescript
+  // draft-reducer.ts
+  case "REORDER_SECTIONS": {
+    const nextSections = [...state.sections];
+    const [moved] = nextSections.splice(action.payload.fromIndex, 1);
+    nextSections.splice(action.payload.toIndex, 0, moved);
+    return {
+      ...state,
+      sections: nextSections.map((sec, idx) => ({ ...sec, position: idx })),
+    };
+  }
+  ```
+- **전체 송폼 보기 화면과의 동기화**:
+  - 전체 송폼 화면(`FullSongFormView.tsx`)이 `project.sections`를 직접 순회(`map`)하여 렌더링하도록 작성하면, 순서 변경 즉시 불변 상태 갱신에 의해 전체 송폼 카드 목록도 리렌더링되어 순서가 100% 실시간 동기화됩니다.
+
+### 4.3 전체 곡 누적 마디 번호 계산 패턴
+개별 구간 보기에서는 `#1~#8`로 표시되지만, 전체 송폼 보기에서는 음악적 흐름을 위해 "전체 마디 번호"를 병기하는 것이 매우 유용합니다:
+```typescript
+let cumulativeBarOffset = 0;
+const sectionsWithCumulativeBars = project.sections.map((sec) => {
+  const startTotalBar = cumulativeBarOffset + 1;
+  const endTotalBar = cumulativeBarOffset + sec.bar_count;
+  cumulativeBarOffset += sec.bar_count;
+  return { ...sec, startTotalBar, endTotalBar };
+});
+```
+
+### 4.4 실제 코드명 변환 함수 사용법
+- `realizeChord(tonic, chordStep)`:
+  ```typescript
+  import { realizeChord } from "@/app/lib/shared/domain/chord-realizer";
+
+  // 첫 번째 인자가 tonic, 두 번째 인자가 ChordStep입니다.
+  const chordName = realizeChord(project.tonic, {
+    degree: chord.degree,
+    quality: chord.quality,
+    extension: chord.extension || null,
+    bass_degree: chord.bass_degree || null,
+  }); // returns string (e.g. "Cmaj7", "G7/B")
+  ```
+
+---
+
+## 5. 검증 결과
+
+- **정적 타입 검사**: `npm run typecheck` 통과 (0 errors)
+- **단위/통합 테스트**: `npm test` 총 52개 테스트 100% 통과 (`52 passed`, 0 failed)
+  - `FE Enhancement: Recommendation Auto-Refresh upon Chord Input with Preserved Sort` 통과
+  - `FE Enhancement: Fingerprint Reactivity and Exception State Transitions` 통과
+- **테스트 파일**: [`test/fe-enhancement-recommendation.test.ts`](file:///Users/gimhyeyeon/Desktop/project/cpmanager/test/fe-enhancement-recommendation.test.ts)

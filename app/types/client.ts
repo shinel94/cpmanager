@@ -47,12 +47,35 @@ export type SelectedChordTarget = {
   beat: number;
 };
 
+export type ProgressionPatternFeedback = {
+  type: "cadence" | "progression" | "bassline";
+  name: string;
+  description: string;
+  bars: number[];
+};
+
+export type TechniqueAlternative = {
+  id: number;
+  name: string;
+  description: string;
+  confidence: number;
+  evidence?: string[];
+};
+
 export type TechniqueFeedback = {
   id: number;
   name: string;
   description: string;
   targetBarPosition?: number;
   targetBeat?: number;
+  confidence?: number;
+  evidence?: string[];
+  targetDegree?: string;
+  sourceMode?: string;
+  inversion?: string;
+  progressionPattern?: ProgressionPatternFeedback | null;
+  progressionAlternatives?: ProgressionPatternFeedback[];
+  alternatives?: TechniqueAlternative[];
 };
 
 export type RecommendationStep = {
@@ -92,4 +115,21 @@ export type SerializedProjectPayload = {
       }>;
     }>;
   }>;
+};
+
+export type UserProgressionStep = {
+  position: number;
+  degree: string;
+  quality: Quality;
+  extension?: Extension | null;
+  bass_degree?: string | null;
+};
+
+export type UserProgressionItem = {
+  id: number;
+  name: string;
+  description?: string | null;
+  formTags: string[];
+  steps: UserProgressionStep[];
+  created_at: string;
 };

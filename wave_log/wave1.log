@@ -106,7 +106,9 @@ legacy seed CLI with `--db` -> passed (160 progressions, 640 steps, 5 rules)
 - 160 system recommendation rows seeded.
 - 640 system progression step rows seeded.
 - System form-tag relations seeded.
-- Five typed technique rules seeded.
+- Eight typed technique rules seeded after enhancement precision rules were added.
 - Catalog and seed tests passed.
 
 Wave 1 is complete. Wave 2 can start after reviewing the normalized degree and code-attribute contract.
+
+Current state note: Enhancement Step 4 extended the seeded technique rule count from the original 5 to 8.

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Header } from "@/app/components/layout/Header";
 import { WorkspaceLayout } from "@/app/components/layout/WorkspaceLayout";
 import { Modal } from "@/app/components/common/Modal";
@@ -16,6 +16,12 @@ import { CreateProjectModal } from "@/app/components/project/CreateProjectModal"
 import { SectionList } from "@/app/components/songform/SectionList";
 import { AddSectionModal } from "@/app/components/songform/AddSectionModal";
 import { ChordChartGrid } from "@/app/components/chordchart/ChordChartGrid";
+import { FullSongFormView } from "@/app/components/chordchart/FullSongFormView";
+import { ChordEditModal } from "@/app/components/chordchart/ChordEditModal";
+import { InlineChordBuilder } from "@/app/components/chordchart/InlineChordBuilder";
+import { TechniqueCard } from "@/app/components/analysis/TechniqueCard";
+import { RecommendationPanel } from "@/app/components/recommendation/RecommendationPanel";
+import { UserProgressionsModal } from "@/app/components/progression/UserProgressionsModal";
 
 export function WorkspaceShell() {
   const toast = useToast();
@@ -24,6 +30,8 @@ export function WorkspaceShell() {
     isDirty,
     selectedBlock,
     setSelectedBlock,
+    lastTechnique,
+    setLastTechnique,
     updateMeta,
     addSection,
     removeSection,
@@ -36,6 +44,7 @@ export function WorkspaceShell() {
     resetToEmpty,
   } = useProjectDraft();
 
+  const [viewMode, setViewMode] = useState<"single" | "all">("single");
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
   const [selectedBarPosition, setSelectedBarPosition] = useState<number | null>(null);
   const [selectedBeat, setSelectedBeat] = useState<number | null>(null);
@@ -47,9 +56,19 @@ export function WorkspaceShell() {
   const [isUserProgressionsOpen, setIsUserProgressionsOpen] = useState(false);
   const [isConfirmLeaveOpen, setIsConfirmLeaveOpen] = useState(false);
   const [isAddSectionOpen, setIsAddSectionOpen] = useState(false);
+  const [isChordEditOpen, setIsChordEditOpen] = useState(false);
+  const [isDetailExpanded, setIsDetailExpanded] = useState(false);
 
   const diatonicChords = getMajorDiatonicChords(project.tonic);
   const activeSection = project.sections.find((s) => s.id === activeSectionId);
+
+  const currentSelectedChord = useMemo(() => {
+    if (!activeSection || !selectedBarPosition) return null;
+    const bar = activeSection.bars.find((b) => b.position === selectedBarPosition);
+    if (!bar) return null;
+    const beatToFind = selectedBeat || 1;
+    return bar.chords.find((c) => (c.beat || 1) === beatToFind) || null;
+  }, [activeSection, selectedBarPosition, selectedBeat]);
 
   // Target block resolution for 4-bar recommendations
   const activeStartBar = (() => {
@@ -80,6 +99,108 @@ export function WorkspaceShell() {
 
   const isTargetBlockLessThanFour = barsInTargetBlock.length < 4;
 
+  // Realtime harmonic technique analysis helper
+  const runTechniqueAnalysis = async (
+    sectionId: string,
+    barPos: number,
+    beat: number,
+    afterChord: { degree: string; quality: any; extension?: any; bass_degree?: string | null },
+    beforeChord?: any,
+  ) => {
+    const sec = project.sections.find((s) => s.id === sectionId);
+    if (!sec) return;
+    const blockStart = Math.floor((barPos - 1) / 4) * 4 + 1;
+    const blockBars = [1, 2, 3, 4].map((relPos) => {
+      const b = sec.bars.find((bar) => bar.position === blockStart + relPos - 1);
+      return {
+        position: relPos,
+        chords: b?.chords.map((c) => ({
+          beat: c.beat,
+          degree: c.degree,
+          quality: c.quality,
+          extension: c.extension ?? null,
+          bass_degree: c.bass_degree ?? null,
+        })) ?? [],
+      };
+    });
+
+    const targetRelPos = barPos - blockStart + 1;
+    const targetBarInBlock = blockBars.find((b) => b.position === targetRelPos);
+    if (targetBarInBlock) {
+      const nextChord = {
+        beat: beat || 1,
+        degree: afterChord.degree,
+        quality: afterChord.quality,
+        extension: afterChord.extension ?? null,
+        bass_degree: afterChord.bass_degree ?? null,
+      };
+      const existingAtBeat = targetBarInBlock.chords.some((chord) => chord.beat === nextChord.beat);
+      targetBarInBlock.chords = existingAtBeat
+        ? targetBarInBlock.chords.map((chord) => chord.beat === nextChord.beat ? nextChord : chord)
+        : [...targetBarInBlock.chords, nextChord].sort((a, b) => a.beat - b.beat);
+    }
+
+    const beforeStep = beforeChord
+      ? {
+          degree: beforeChord.degree,
+          quality: beforeChord.quality,
+          extension: beforeChord.extension ?? null,
+          bass_degree: beforeChord.bass_degree ?? null,
+        }
+      : {
+          degree: afterChord.degree,
+          quality: "major",
+          extension: null,
+          bass_degree: null,
+        };
+
+    const afterStep = {
+      degree: afterChord.degree,
+      quality: afterChord.quality,
+      extension: afterChord.extension ?? null,
+      bass_degree: afterChord.bass_degree ?? null,
+    };
+
+    try {
+      const res = await apiClient.post<{
+        technique: any;
+        progressionPattern?: any;
+        progressionAlternatives?: any;
+      }>("/api/analysis", {
+        tonic: project.tonic,
+        sectionName: sec.name,
+        blockStart: blockStart,
+        target: {
+          barPosition: targetRelPos,
+          beat: beat || 1,
+        },
+        before: beforeStep,
+        after: afterStep,
+        bars: blockBars,
+      });
+      if (res?.technique || res?.progressionPattern) {
+        setLastTechnique({
+          id: res.technique?.id ?? 0,
+          name: res.technique?.name ?? (res.progressionPattern?.name || "화성 진행 분석"),
+          description:
+            res.technique?.description ?? (res.progressionPattern?.description || ""),
+          targetBarPosition: barPos,
+          targetBeat: beat,
+          confidence: res.technique?.confidence,
+          evidence: res.technique?.evidence,
+          targetDegree: res.technique?.targetDegree,
+          sourceMode: res.technique?.sourceMode,
+          inversion: res.technique?.inversion,
+          progressionPattern: res.progressionPattern ?? null,
+          progressionAlternatives: res.progressionAlternatives ?? [],
+          alternatives: res.technique?.alternatives ?? [],
+        });
+      }
+    } catch {
+      // Non-critical analysis failure
+    }
+  };
+
   // Keep activeSectionId valid
   useEffect(() => {
     if (project.sections.length > 0) {
@@ -106,7 +227,8 @@ export function WorkspaceShell() {
         isCreateProjectOpen ||
         isUserProgressionsOpen ||
         isAddSectionOpen ||
-        isConfirmLeaveOpen
+        isConfirmLeaveOpen ||
+        isChordEditOpen
       ) {
         return;
       }
@@ -140,11 +262,24 @@ export function WorkspaceShell() {
           const targetChord = diatonicChords[digit - 1];
           if (targetChord) {
             const beatToSet = selectedBeat || 1;
+            const targetBar = activeSection.bars.find(
+              (b) => b.position === selectedBarPosition,
+            );
+            const existingChord = targetBar?.chords.find(
+              (c) => c.beat === beatToSet,
+            );
             setChord(activeSection.id, selectedBarPosition, {
               beat: beatToSet,
               degree: targetChord.degree,
               quality: targetChord.quality,
             });
+            runTechniqueAnalysis(
+              activeSection.id,
+              selectedBarPosition,
+              beatToSet,
+              targetChord,
+              existingChord,
+            );
             toast.info(
               `마디 #${selectedBarPosition}${
                 beatToSet > 1 ? ` ${beatToSet}박` : ""
@@ -170,6 +305,7 @@ export function WorkspaceShell() {
     clearBar,
     clearChord,
     setChord,
+    runTechniqueAnalysis,
     toast,
   ]);
 
@@ -274,8 +410,11 @@ export function WorkspaceShell() {
             {/* Song Form Sections */}
             <SectionList
               activeSectionId={activeSectionId}
+              viewMode={viewMode}
+              onToggleViewMode={(mode) => setViewMode(mode)}
               onSelectSection={(id) => {
                 setActiveSectionId(id);
+                setViewMode("single");
                 setSelectedBarPosition(null);
                 setSelectedBeat(null);
                 const targetSec = project.sections.find((s) => s.id === id);
@@ -297,7 +436,7 @@ export function WorkspaceShell() {
                   </span>
                   {selectedBarPosition ? (
                     <span className="px-2 py-0.5 text-xs font-semibold rounded bg-indigo-100 text-indigo-800">
-                      선택된 마디: #{selectedBarPosition}
+                      {activeSection ? `[${activeSection.name}] ` : ""}선택된 마디: #{selectedBarPosition}
                       {selectedBeat ? ` (${selectedBeat}박)` : ""}
                     </span>
                   ) : (
@@ -306,7 +445,23 @@ export function WorkspaceShell() {
                     </span>
                   )}
                 </div>
-                <span className="text-xs text-slate-400">단축키: 숫자 1~7</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-slate-400 hidden sm:inline">단축키: 숫자 1~7</span>
+                  <button
+                    type="button"
+                    onClick={() => setIsDetailExpanded((prev) => !prev)}
+                    className={`px-2.5 py-1 text-xs font-bold rounded-lg transition cursor-pointer flex items-center gap-1.5 shadow-2xs ${
+                      isDetailExpanded
+                        ? "bg-indigo-600 text-white hover:bg-indigo-700 ring-2 ring-indigo-200"
+                        : "bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200"
+                    }`}
+                    title="텐션, 슬래시 코드 등 상세 화성 설정 펼치기/접기"
+                  >
+                    <span>⚙️</span>
+                    <span>코드 상세 설정</span>
+                    <span className="text-[10px]">{isDetailExpanded ? "▲ 접기" : "▼ 펼치기"}</span>
+                  </button>
+                </div>
               </div>
               <div className="grid grid-cols-7 gap-2">
                 {diatonicChords.map((chord) => (
@@ -333,11 +488,25 @@ export function WorkspaceShell() {
                       }
 
                       const beatToSet = selectedBeat || 1;
+                      const targetBar = activeSection.bars.find(
+                        (b) => b.position === targetBarPosition,
+                      );
+                      const existingChord = targetBar?.chords.find(
+                        (c) => c.beat === beatToSet,
+                      );
+
                       setChord(activeSection.id, targetBarPosition, {
                         beat: beatToSet,
                         degree: chord.degree,
                         quality: chord.quality,
                       });
+                      runTechniqueAnalysis(
+                        activeSection.id,
+                        targetBarPosition,
+                        beatToSet,
+                        chord,
+                        existingChord,
+                      );
                       toast.success(
                         `${activeSection.name} #${targetBarPosition} 마디${
                           beatToSet > 1 ? ` ${beatToSet}박` : ""
@@ -355,6 +524,63 @@ export function WorkspaceShell() {
                   </button>
                 ))}
               </div>
+
+              {/* Inline Chord Detail Builder Drawer */}
+              {isDetailExpanded && (
+                <InlineChordBuilder
+                  tonic={project.tonic}
+                  sectionName={activeSection?.name}
+                  sectionId={activeSection?.id}
+                  barPosition={selectedBarPosition}
+                  beat={selectedBeat || 1}
+                  currentChord={currentSelectedChord}
+                  onChangeChord={(updated) => {
+                    if (!activeSection) {
+                      toast.warning("먼저 송폼 구간을 선택하거나 생성하세요.");
+                      return;
+                    }
+                    let targetBarPos = selectedBarPosition;
+                    if (!targetBarPos) {
+                      const emptyBar = activeSection.bars.find(
+                        (b) => b.chords.length === 0,
+                      );
+                      targetBarPos = emptyBar ? emptyBar.position : 1;
+                      setSelectedBarPosition(targetBarPos);
+                    }
+                    const beatToSet = selectedBeat || 1;
+                    const prevChord = currentSelectedChord || undefined;
+
+                    setChord(activeSection.id, targetBarPos, {
+                      beat: beatToSet,
+                      degree: updated.degree,
+                      quality: updated.quality,
+                      extension: updated.extension || undefined,
+                      bass_degree: updated.bass_degree || undefined,
+                    });
+
+                    runTechniqueAnalysis(
+                      activeSection.id,
+                      targetBarPos,
+                      beatToSet,
+                      updated,
+                      prevChord,
+                    );
+                  }}
+                  onClearChord={() => {
+                    if (!activeSection || !selectedBarPosition) return;
+                    if (selectedBeat && selectedBeat > 1) {
+                      clearChord(activeSection.id, selectedBarPosition, selectedBeat);
+                      toast.info(
+                        `마디 #${selectedBarPosition} ${selectedBeat}박의 코드를 삭제했습니다.`,
+                      );
+                    } else {
+                      clearBar(activeSection.id, selectedBarPosition);
+                      toast.info(`마디 #${selectedBarPosition}의 코드를 삭제했습니다.`);
+                    }
+                  }}
+                  onOpenDetailedModal={() => setIsChordEditOpen(true)}
+                />
+              )}
             </div>
 
             {/* Empty Project Onboarding or Active Section Grid */}
@@ -388,6 +614,97 @@ export function WorkspaceShell() {
                   </button>
                 </div>
               </div>
+            ) : viewMode === "all" ? (
+              <FullSongFormView
+                sections={project.sections}
+                tonic={project.tonic}
+                activeSectionId={activeSectionId}
+                selectedBarPosition={selectedBarPosition}
+                selectedBeat={selectedBeat}
+                selectedStartBar={activeStartBar}
+                onSelectBar={(secId, barPos) => {
+                  setActiveSectionId(secId);
+                  setSelectedBarPosition(barPos);
+                  setSelectedBeat(null);
+                  const targetSec = project.sections.find((s) => s.id === secId);
+                  const blockStart = Math.floor((barPos - 1) / 4) * 4 + 1;
+                  setSelectedBlock({
+                    sectionId: secId,
+                    startBar: blockStart,
+                    endBar: Math.min(
+                      blockStart + 3,
+                      targetSec ? targetSec.bar_count : blockStart + 3,
+                    ),
+                  });
+                  const targetBar = targetSec?.bars.find((b) => b.position === barPos);
+                  if (targetBar && targetBar.chords.length > 0) {
+                    const firstChord = targetBar.chords[0];
+                    runTechniqueAnalysis(secId, barPos, firstChord.beat || 1, firstChord);
+                  }
+                }}
+                onSelectBeat={(secId, barPos, beat) => {
+                  setActiveSectionId(secId);
+                  setSelectedBarPosition(barPos);
+                  setSelectedBeat(beat);
+                  const targetSec = project.sections.find((s) => s.id === secId);
+                  const blockStart = Math.floor((barPos - 1) / 4) * 4 + 1;
+                  setSelectedBlock({
+                    sectionId: secId,
+                    startBar: blockStart,
+                    endBar: Math.min(
+                      blockStart + 3,
+                      targetSec ? targetSec.bar_count : blockStart + 3,
+                    ),
+                  });
+                  const targetBar = targetSec?.bars.find((b) => b.position === barPos);
+                  const targetChord = targetBar?.chords.find((c) => c.beat === beat) || targetBar?.chords[0];
+                  if (targetChord) {
+                    runTechniqueAnalysis(secId, barPos, beat, targetChord);
+                  }
+                }}
+                onSelectBlock={(secId, startBar, endBar) => {
+                  setActiveSectionId(secId);
+                  setSelectedBlock({
+                    sectionId: secId,
+                    startBar,
+                    endBar,
+                  });
+                }}
+                onOpenEdit={(secId, barPos, beat) => {
+                  setActiveSectionId(secId);
+                  setSelectedBarPosition(barPos);
+                  setSelectedBeat(beat);
+                  setIsChordEditOpen(true);
+                }}
+                onClearBar={(secId, barPos) => {
+                  clearBar(secId, barPos);
+                  toast.info(`마디 #${barPos}의 코드를 삭제했습니다.`);
+                }}
+                onClearBeat={(secId, barPos, beat) => {
+                  clearChord(secId, barPos, beat);
+                  toast.info(`마디 #${barPos} ${beat}박의 코드를 삭제했습니다.`);
+                }}
+                onClearSection={(secId) => {
+                  const sec = project.sections.find((s) => s.id === secId);
+                  if (sec) {
+                    sec.bars.forEach((b) => clearBar(secId, b.position));
+                    if (activeSectionId === secId) {
+                      setSelectedBarPosition(null);
+                      setSelectedBeat(null);
+                    }
+                    toast.info(`${sec.name} 구간의 모든 코드가 초기화되었습니다.`);
+                  }
+                }}
+                onFocusSingleSection={(secId) => {
+                  setActiveSectionId(secId);
+                  setViewMode("single");
+                  setSelectedBarPosition(null);
+                  setSelectedBeat(null);
+                  const targetSec = project.sections.find((s) => s.id === secId);
+                  const maxEnd = targetSec ? Math.min(4, targetSec.bar_count) : 4;
+                  setSelectedBlock({ sectionId: secId, startBar: 1, endBar: maxEnd });
+                }}
+              />
             ) : activeSection ? (
               <ChordChartGrid
                 section={activeSection}
@@ -404,6 +721,11 @@ export function WorkspaceShell() {
                     startBar: blockStart,
                     endBar: Math.min(blockStart + 3, activeSection.bar_count),
                   });
+                  const targetBar = activeSection.bars.find((b) => b.position === barPos);
+                  if (targetBar && targetBar.chords.length > 0) {
+                    const firstChord = targetBar.chords[0];
+                    runTechniqueAnalysis(activeSection.id, barPos, firstChord.beat || 1, firstChord);
+                  }
                 }}
                 onSelectBeat={(barPos, beat) => {
                   setSelectedBarPosition(barPos);
@@ -414,6 +736,11 @@ export function WorkspaceShell() {
                     startBar: blockStart,
                     endBar: Math.min(blockStart + 3, activeSection.bar_count),
                   });
+                  const targetBar = activeSection.bars.find((b) => b.position === barPos);
+                  const targetChord = targetBar?.chords.find((c) => c.beat === beat) || targetBar?.chords[0];
+                  if (targetChord) {
+                    runTechniqueAnalysis(activeSection.id, barPos, beat, targetChord);
+                  }
                 }}
                 onSelectBlock={(startBar, endBar) => {
                   setSelectedBlock({
@@ -421,6 +748,11 @@ export function WorkspaceShell() {
                     startBar,
                     endBar,
                   });
+                }}
+                onOpenEdit={(barPos, beat) => {
+                  setSelectedBarPosition(barPos);
+                  setSelectedBeat(beat);
+                  setIsChordEditOpen(true);
                 }}
                 onClearBar={(barPos) => {
                   clearBar(activeSection.id, barPos);
@@ -445,122 +777,31 @@ export function WorkspaceShell() {
         rightPanel={
           <div className="space-y-5">
             {/* Realtime Technique Analysis Feedback Card */}
-            <div className="p-3.5 rounded-xl border border-purple-200 bg-purple-50/50 shadow-xs">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-purple-900 mb-1.5">
-                <span className="px-1.5 py-0.5 rounded bg-purple-200 text-purple-800 text-[10px] font-extrabold uppercase">
-                  실시간 분석
-                </span>
-                <span>모달 인터체인지 (iv)</span>
-              </div>
-              <p className="text-xs text-purple-700 leading-relaxed">
-                현재 조의 평행단조에서 코드를 차용한 진행입니다. 독특하고 애절한 화성적 색채를 부여합니다.
-              </p>
-            </div>
+            <TechniqueCard
+              lastTechnique={lastTechnique}
+              onClear={() => setLastTechnique(null)}
+            />
 
             {/* 4-Bar Recommendation Panel */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                    4마디 추천 진행
-                  </span>
-                  {activeSection && (
-                    <span className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
-                      대상: #{activeStartBar} ~ #{targetEndBar}마디
-                    </span>
-                  )}
-                </div>
-                <span className="text-xs text-slate-400">대중성 순</span>
-              </div>
-
-              {/* Recommendation Cards list */}
-              <div className="space-y-2.5">
-                {[
-                  {
-                    name: "I - V - VI - IV (팝 4코드 진행)",
-                    formTag: "Chorus",
-                    steps: [
-                      { degree: "I", quality: "major" as const },
-                      { degree: "V", quality: "major" as const },
-                      { degree: "VI", quality: "minor" as const },
-                      { degree: "IV", quality: "major" as const },
-                    ],
-                  },
-                  {
-                    name: "IV - V - III - VI (왕도 진행)",
-                    formTag: "Chorus",
-                    steps: [
-                      { degree: "IV", quality: "major" as const },
-                      { degree: "V", quality: "major" as const },
-                      { degree: "III", quality: "minor" as const },
-                      { degree: "VI", quality: "minor" as const },
-                    ],
-                  },
-                ].map((rec, idx) => (
-                  <div
-                    key={idx}
-                    className="p-3 rounded-xl border border-slate-200 bg-white hover:border-indigo-300 shadow-xs transition"
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-bold text-slate-900 truncate">
-                        {rec.name}
-                      </span>
-                      <span className="text-[10px] font-semibold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">
-                        {rec.formTag}
-                      </span>
-                    </div>
-                    <div className="text-xs font-semibold text-indigo-600 mb-1">
-                      {rec.steps.map((s) => s.degree).join(" - ")}
-                    </div>
-                    <div className="text-xs text-slate-600 mb-2">
-                      {rec.steps
-                        .map((s) =>
-                          realizeChord(project.tonic, {
-                            degree: s.degree,
-                            quality: s.quality,
-                            extension: null,
-                            bass_degree: null,
-                          }),
-                        )
-                        .join(" - ")}
-                    </div>
-                    <button
-                      type="button"
-                      disabled={isTargetBlockLessThanFour || !activeSection}
-                      onClick={() => {
-                        if (!activeSection) {
-                          toast.warning("먼저 송폼 구간을 선택하세요.");
-                          return;
-                        }
-                        if (isTargetBlockLessThanFour) {
-                          toast.warning(
-                            "선택된 블록이 4마디 미만이어서 추천 진행을 적용할 수 없습니다.",
-                          );
-                          return;
-                        }
-                        applyRecommendation(
-                          activeSection.id,
-                          activeStartBar,
-                          rec.steps,
-                        );
-                        toast.success(
-                          `추천 진행이 '${activeSection.name}' #${activeStartBar}~#${targetEndBar} 마디에 비파괴 적용되었습니다.`,
-                        );
-                      }}
-                      className={`w-full py-1.5 text-xs font-semibold rounded-lg transition ${
-                        isTargetBlockLessThanFour
-                          ? "cursor-not-allowed bg-slate-100 text-slate-400 border border-slate-200"
-                          : "cursor-pointer bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200"
-                      }`}
-                    >
-                      {isTargetBlockLessThanFour
-                        ? `4마디 미만 (${activeStartBar}~${targetEndBar}마디 적용 불가)`
-                        : `이 진행 ${activeStartBar}~${targetEndBar}마디에 적용하기`}
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <RecommendationPanel
+              section={activeSection ?? null}
+              tonic={project.tonic}
+              startBar={activeStartBar}
+              endBar={targetEndBar}
+              onApplyRecommendation={(start, steps) => {
+                if (!activeSection) return;
+                applyRecommendation(activeSection.id, start, steps);
+                if (steps.length > 0) {
+                  const lastStep = steps[steps.length - 1];
+                  runTechniqueAnalysis(
+                    activeSection.id,
+                    start + steps.length - 1,
+                    1,
+                    lastStep,
+                  );
+                }
+              }}
+            />
           </div>
         }
       />
@@ -584,36 +825,103 @@ export function WorkspaceShell() {
         onClose={() => setIsCreateProjectOpen(false)}
       />
 
-      {/* User Progression Modal (Shell Preview) */}
-      <Modal
+      {/* User Progression Modal (Fully Wired with Wildcard Search & Registration) */}
+      <UserProgressionsModal
         isOpen={isUserProgressionsOpen}
         onClose={() => setIsUserProgressionsOpen(false)}
-        title="사용자 진행 보관함"
-        size="lg"
-      >
-        <div className="space-y-4">
-          <p className="text-xs text-slate-500">
-            기본 추천과 분리된 나만의 4마디 도수 진행을 등록하고 와일드카드(`x`)로 검색합니다.
-          </p>
-          <div className="flex gap-2">
-            {["x", "II", "I", "x"].map((token, i) => (
-              <input
-                key={i}
-                type="text"
-                defaultValue={token}
-                className="w-14 h-10 text-center font-bold text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-              />
-            ))}
-            <button
-              type="button"
-              onClick={() => toast.info("와일드카드 패턴 검색을 실행했습니다.")}
-              className="px-4 py-2 text-xs font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition"
-            >
-              패턴 검색
-            </button>
-          </div>
-        </div>
-      </Modal>
+        tonic={project.tonic}
+        activeSection={activeSection}
+        targetBlock={
+          activeSection
+            ? {
+                startBar: activeStartBar,
+                endBar: Math.min(activeStartBar + 3, activeSection.bar_count),
+              }
+            : null
+        }
+        onApplyProgression={(steps) => {
+          if (!activeSection) return;
+          applyRecommendation(
+            activeSection.id,
+            activeStartBar,
+            steps.map((step) => ({
+              position: step.position,
+              degree: step.degree,
+              quality: step.quality,
+              extension: step.extension || undefined,
+              bass_degree: step.bass_degree || undefined,
+            }))
+          );
+          if (steps.length > 0) {
+            const lastStep = steps[steps.length - 1];
+            runTechniqueAnalysis(
+              activeSection.id,
+              activeStartBar + lastStep.position - 1,
+              1,
+              lastStep,
+            );
+          }
+        }}
+      />
+
+      {/* Chord Attribute Edit Modal */}
+      {activeSection && selectedBarPosition && (
+        <ChordEditModal
+          isOpen={isChordEditOpen}
+          onClose={() => setIsChordEditOpen(false)}
+          sectionName={activeSection.name}
+          barPosition={selectedBarPosition}
+          beat={selectedBeat || 1}
+          tonic={project.tonic}
+          initialChord={
+            activeSection.bars
+              .find((b) => b.position === selectedBarPosition)
+              ?.chords.find((c) => c.beat === (selectedBeat || 1)) ||
+            activeSection.bars
+              .find((b) => b.position === selectedBarPosition)
+              ?.chords[0] ||
+            null
+          }
+          onSave={(chordData) => {
+            const beatToSet = selectedBeat || 1;
+            const targetBar = activeSection.bars.find(
+              (b) => b.position === selectedBarPosition,
+            );
+            const existingChord = targetBar?.chords.find(
+              (c) => c.beat === beatToSet,
+            );
+
+            setChord(activeSection.id, selectedBarPosition, {
+              beat: beatToSet,
+              degree: chordData.degree,
+              quality: chordData.quality,
+              extension: chordData.extension,
+              bass_degree: chordData.bass_degree,
+            });
+            runTechniqueAnalysis(
+              activeSection.id,
+              selectedBarPosition,
+              beatToSet,
+              chordData,
+              existingChord,
+            );
+            toast.success(
+              `${activeSection.name} #${selectedBarPosition} 마디(${beatToSet}박) 코드가 수정되었습니다.`,
+            );
+          }}
+          onDelete={() => {
+            if (selectedBeat && selectedBeat > 1) {
+              clearChord(activeSection.id, selectedBarPosition, selectedBeat);
+              toast.info(
+                `마디 #${selectedBarPosition} ${selectedBeat}박의 코드를 삭제했습니다.`,
+              );
+            } else {
+              clearBar(activeSection.id, selectedBarPosition);
+              toast.info(`마디 #${selectedBarPosition}의 코드를 삭제했습니다.`);
+            }
+          }}
+        />
+      )}
 
       {/* Confirm Unsaved Changes Dialog */}
       <ConfirmDialog

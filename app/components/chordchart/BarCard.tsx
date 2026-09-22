@@ -12,8 +12,10 @@ export type BarCardProps = {
   isSelected: boolean;
   selectedBeat: number | null;
   viewMode: "compact" | "subdivided";
+  cumulativeBarNumber?: number;
   onSelectBar: (barPosition: number) => void;
   onSelectBeat: (barPosition: number, beat: number) => void;
+  onOpenEdit?: (barPosition: number, beat: number) => void;
   onClearBar: (barPosition: number) => void;
   onClearBeat?: (barPosition: number, beat: number) => void;
 };
@@ -24,8 +26,10 @@ export function BarCard({
   isSelected,
   selectedBeat,
   viewMode,
+  cumulativeBarNumber,
   onSelectBar,
   onSelectBeat,
+  onOpenEdit,
   onClearBar,
   onClearBeat,
 }: BarCardProps) {
@@ -39,6 +43,7 @@ export function BarCard({
   return (
     <div
       onClick={() => onSelectBar(bar.position)}
+      onDoubleClick={() => onOpenEdit?.(bar.position, selectedBeat || 1)}
       className={`min-h-[118px] rounded-xl border-2 p-2.5 flex flex-col justify-between cursor-pointer transition select-none group relative ${
         isSelected
           ? "ring-2 ring-indigo-500 border-indigo-500 bg-indigo-50/50 shadow-md"
@@ -51,22 +56,44 @@ export function BarCard({
     >
       {/* Top Header of Bar */}
       <div className="flex items-center justify-between text-xs">
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 min-w-0">
           <span
-            className={`font-mono font-bold ${
+            className={`font-mono font-bold shrink-0 ${
               isSelected ? "text-indigo-700" : "text-slate-500"
             }`}
           >
             #{bar.position}
           </span>
-          {isSelected && (
-            <span className="bg-indigo-600 text-white text-[10px] font-bold px-1.5 py-0.2 rounded">
-              {selectedBeat ? `${selectedBeat}박 선택됨` : "선택됨"}
+          {!isSelected && cumulativeBarNumber !== undefined && (
+            <span
+              className="font-mono text-[10px] text-slate-400 font-medium whitespace-nowrap"
+              title={`전체 마디 #${cumulativeBarNumber}`}
+            >
+              (총 #{cumulativeBarNumber})
             </span>
+          )}
+          {isSelected && (
+            <span className="bg-indigo-600 text-white text-[10px] font-bold px-1.5 py-0.2 rounded whitespace-nowrap shrink-0">
+              {selectedBeat ? `${selectedBeat}박 선택` : "선택됨"}
+            </span>
+          )}
+          {isSelected && onOpenEdit && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onOpenEdit(bar.position, selectedBeat || 1);
+              }}
+              className="text-[10px] font-bold text-indigo-700 bg-indigo-100 hover:bg-indigo-200 px-1.5 py-0.5 rounded transition cursor-pointer flex items-center gap-0.5 whitespace-nowrap shrink-0"
+              title="코드 상세 속성 편집 (텐션/슬래시)"
+            >
+              <span>✏️</span>
+              <span>속성</span>
+            </button>
           )}
           {isMultiChord && (
             <span
-              className="bg-purple-100 text-purple-700 text-[10px] font-bold px-1.5 py-0.2 rounded border border-purple-200"
+              className="bg-purple-100 text-purple-700 text-[10px] font-bold px-1.5 py-0.2 rounded border border-purple-200 whitespace-nowrap shrink-0"
               title="1마디에 여러 코드가 포함되어 추천에서 제외됩니다"
             >
               복수 {bar.chords.length}코드
@@ -135,19 +162,37 @@ export function BarCard({
                   <span className="text-xs text-slate-300 my-auto block">-</span>
                 )}
 
-                {/* Optional beat clear button when beat is selected and has chord */}
-                {isBeatSelected && beatChord && onClearBeat ? (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onClearBeat(bar.position, beatNum);
-                    }}
-                    className="text-[9px] text-rose-500 hover:underline block mt-0.5"
-                  >
-                    삭제
-                  </button>
-                ) : null}
+                {/* Beat actions when beat is selected */}
+                {isBeatSelected && (
+                  <div className="flex items-center justify-center gap-1 mt-0.5">
+                    {onOpenEdit && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onOpenEdit(bar.position, beatNum);
+                        }}
+                        className="text-[9px] font-semibold text-indigo-600 hover:underline"
+                        title="박자 코드 편집"
+                      >
+                        편집
+                      </button>
+                    )}
+                    {beatChord && onClearBeat && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onClearBeat(bar.position, beatNum);
+                        }}
+                        className="text-[9px] text-rose-500 hover:underline"
+                        title="박자 코드 삭제"
+                      >
+                        삭제
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             );
           })}
@@ -158,7 +203,7 @@ export function BarCard({
           <div className="text-2xl font-black text-slate-800 tracking-tight">
             {mainDisplayName}
           </div>
-          <div className="text-xs text-slate-400 font-serif mt-0.5 flex items-center justify-center gap-1">
+          <div className="text-xs text-slate-400 font-serif mt-0.5 flex items-center justify-center gap-1 flex-wrap">
             <span>{mainChord.degree}</span>
             {mainChord.quality !== "major" && (
               <span className="text-[10px] bg-slate-100 text-slate-600 px-1 rounded">
@@ -168,6 +213,11 @@ export function BarCard({
             {mainChord.extension && (
               <span className="text-[10px] bg-indigo-50 text-indigo-600 px-1 rounded font-bold">
                 {mainChord.extension}
+              </span>
+            )}
+            {mainChord.bass_degree && (
+              <span className="text-[10px] bg-amber-50 text-amber-700 px-1 rounded font-bold border border-amber-200">
+                /{mainChord.bass_degree}
               </span>
             )}
           </div>

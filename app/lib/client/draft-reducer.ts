@@ -18,6 +18,13 @@ export type DraftAction =
       type: "ADD_SECTION";
       payload: { name: string; barCount?: number; insertIndex?: number };
     }
+  | {
+      type: "ADD_SECTIONS_BULK";
+      payload: {
+        sections: Array<{ name: string; barCount?: number }>;
+        insertIndex?: number;
+      };
+    }
   | { type: "REMOVE_SECTION"; payload: { sectionId: string } }
   | { type: "REORDER_SECTIONS"; payload: { fromIndex: number; toIndex: number } }
   | {
@@ -91,6 +98,31 @@ export function projectDraftReducer(
       }
 
       // Re-index positions
+      return {
+        ...state,
+        sections: nextSections.map((sec, idx) => ({ ...sec, position: idx })),
+      };
+    }
+
+    case "ADD_SECTIONS_BULK": {
+      const { sections, insertIndex } = action.payload;
+      if (!sections || sections.length === 0) return state;
+
+      const newSecs = sections.map((item, idx) =>
+        createSection(item.name, item.barCount || 4, 0),
+      );
+
+      const nextSections = [...state.sections];
+      if (
+        insertIndex !== undefined &&
+        insertIndex >= 0 &&
+        insertIndex <= nextSections.length
+      ) {
+        nextSections.splice(insertIndex, 0, ...newSecs);
+      } else {
+        nextSections.push(...newSecs);
+      }
+
       return {
         ...state,
         sections: nextSections.map((sec, idx) => ({ ...sec, position: idx })),

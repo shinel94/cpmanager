@@ -55,7 +55,7 @@ test("creates all Wave 1 tables and seeds data", () => {
     assert.equal(tables.length, 11);
 
     const result = seedWave1(database);
-    assert.deepEqual(result, { progressions: 160, steps: 640, rules: 5 });
+    assert.deepEqual(result, { progressions: 160, steps: 640, rules: 13 });
 
     const tagCount = database.prepare("SELECT COUNT(*) AS count FROM system_progression_form_tags").get() as { count: number };
     assert.ok(tagCount.count > 0);

@@ -1,0 +1,70 @@
+# Backend Technique Enhancement Step 1 Log
+
+## Status
+
+- Started: 2026-09-21
+- Scope: analysis input normalization and multi-chord beat handling
+- Status: Complete
+
+## Implemented
+
+- Added `app/lib/server/domain/analysis-context.ts`.
+- Added `NormalizedBarChord` and `NormalizedBar` types.
+- Added four-bar, position, target, and beat validation.
+- Preserved explicit beat values.
+- Added one-indexed fallback for legacy chords without `beat`.
+- Added duplicate beat rejection.
+- Sorted normalized chords by actual beat.
+- Updated `technique-analyzer.ts` to use the shared normalizer.
+- Updated the FE analysis request builder to preserve existing multi-chord beats and replace only the target beat.
+
+## Decisions
+
+- Missing beats remain backward compatible through sequential fallback: first missing chord becomes beat 1, second beat 2, and so on.
+- Explicit beat values take precedence over array order.
+- A middle-beat mutation in a multi-chord bar returns no technique result.
+- A first-beat mutation can analyze the previous relationship.
+- A last-beat mutation can analyze the next relationship.
+- Normalized bars are sorted by actual beat before analysis.
+
+## Issues and Resolutions
+
+### BE-E0-001: FE request discarded multi-chord context
+
+- Observation: The FE analysis helper replaced the target bar's entire chord array with one chord.
+- Resolution: The helper now preserves existing chords, includes `beat`, and replaces or inserts only the target beat.
+
+### BE-E0-002: Array position was used as beat
+
+- Observation: The backend used `index + 1`, which was incorrect for explicit non-contiguous beats such as 1 and 3.
+- Resolution: The normalizer uses actual `beat` values and sorts chords by beat.
+
+### BE-E0-003: Legacy payload compatibility
+
+- Observation: Existing FE and fixtures can omit `beat`.
+- Resolution: Missing beat values are assigned sequentially during normalization instead of returning an error.
+
+## Verification
+
+```text
+npm run typecheck -> passed
+npm test -> passed (58 tests)
+```
+
+Added regression tests:
+
+- Missing beat fallback
+- Explicit non-contiguous beats
+- Middle-beat analysis suppression
+
+Step 1 is complete. The next enhancement step is the shared `harmonic-math.ts` module.
+
+## Step 0 Baseline Addendum
+
+- Added `test/fixtures/technique-analysis-baseline.json`.
+- Added `test/technique-analysis-baseline.test.ts`.
+- Fixed baseline contract fields: `technique.id`, `technique.name`, `technique.description`.
+- Confirmed FE currently consumes those three fields and stores target position separately in `TechniqueFeedback`.
+- Confirmed seeded rule types: `modal_interchange`, `secondary_dominant`, `slash_chord`, `chord_variation`.
+- Baseline verification after Step 3: `npm test` passes with 63 tests.
+- Step 0 is complete retroactively; its baseline was established after the initial Step 1 implementation.

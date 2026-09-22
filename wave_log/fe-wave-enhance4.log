@@ -1,0 +1,96 @@
+# FE Wave Enhance 4 진행 및 기술 참조 로그
+
+- 파일명: `wave_log/fe-wave-enhance4.log`
+- 실행 일시: 2026-09-22
+- 대상 범위: 다중 송폼 구간 일괄 생성 (Bulk Section Builder) 및 새 프로젝트 커스텀 송폼 빌더 구현 완료
+
+---
+
+## 1. 구현 배경 및 요구사항
+
+기존에는 다음 2가지 송폼 생성 병목이 존재했습니다:
+1. `AddSectionModal.tsx`: 한 번에 단 1개의 구간(예: Verse, 8마디)만 생성할 수 있어, 4~8개 이상의 송폼 구조를 구성하려면 모달을 반복해서 열고 닫아야 했습니다.
+2. `CreateProjectModal.tsx`: 고정된 3종 템플릿(기본 팝, 단일 Verse, 빈 프로젝트)만 제공하여 사용자가 처음 곡을 만들 때 본인이 원하는 송폼 구조를 직접 세팅하여 시작할 수 없었습니다.
+
+사용자 요구사항에 따라, **복잡한 드래그 앤 드롭 없이 단순하게 `+` 버튼으로 행을 추가하고 [구간명 | 마디 수]를 설정하여 한 번에 원하는 모든 송폼 구간을 일괄 생성**할 수 있는 아키텍처 및 UI를 구현했습니다.
+
+---
+
+## 2. 세부 구현 내역
+
+### 2.1 Reducer 및 Context 원자적 일괄 추가 액션 (`ADD_SECTIONS_BULK`)
+- **`app/lib/client/draft-reducer.ts`**:
+  - `ADD_SECTIONS_BULK` 액션 추가:
+    ```typescript
+    case "ADD_SECTIONS_BULK": {
+      const { sections, insertIndex } = action.payload;
+      if (!sections || sections.length === 0) return state;
+
+      const newSecs = sections.map((item) =>
+        createSection(item.name, item.barCount || 4, 0),
+      );
+      ...
+    }
+    ```
+  - 연속적인 `position` 자동 재부여 및 마디 배열 초기화
+  - 단 한 번의 디스패치로 상태를 원자적(Atomic) 갱신하여 연쇄 리렌더링 방지
+- **`app/lib/client/project-draft-context.tsx`**:
+  - `addSections(sections: Array<{ name: string; barCount?: number }>, insertIndex?: number)` 메서드 선언 및 컨텍스트 Provider 노출
+
+### 2.2 `AddSectionModal.tsx` 다중 구간 일괄 생성 UI 구현 및 2줄 카드 구조 개편
+- **모드 전환 탭**: `[단일 구간 추가]` vs `[⚡ 다중 구간 일괄 생성 (Bulk)]`
+- **2줄 카드 기반 레이아웃 (가로 겹침 문제 해결)**:
+  - 기존의 단일 행 flex 레이아웃에서 발생하던 구간명 입력창과 마디 수 버튼 간의 겹침 현상을 해결하기 위해, 각 구간 항목을 **2줄 카드 형태**로 재구성:
+    - **Line 1 (헤더)**: `#N` 뱃지 + 표준 9종 프리셋 드롭다운(`Intro, Verse, Pre-Chorus, Chorus, Interlude, Bridge, Outro, Solo, Post-Chorus`) + '직접 입력...' 선택 시에만 우측에 인풋 활성화 + 우측 `🗑️` 삭제 버튼
+    - **Line 2 (마디 설정)**: `마디 길이 설정:` 라벨 + `[4마디] [8마디] [16마디]` 원클릭 칩 + 정밀 숫자 인풋 + `마디` 단위 표시
+- **스마트 추천 추가 (`+`)**:
+  - `+ 구간 행 추가하기` 클릭 시 직전 구간명에 따라 합리적인 다음 구간(예: Intro -> Verse -> Pre-Chorus -> Chorus -> Bridge -> Chorus -> Outro)과 마디 수가 기본값으로 자동 추천
+- **집계 푸터 및 액션**:
+  - `총 N개 구간 / 합계 M마디` 실시간 집계 정보 노출
+  - `[🚀 N개 구간 일괄 추가하기]` 버튼 클릭 시 한 번에 클라이언트 드래프트에 일괄 추가
+
+### 2.3 `CreateProjectModal.tsx` 커스텀 송폼 빌더 결합 및 2줄 카드 적용
+- **템플릿 옵션 확장**: `TemplateType = "pop" | "single_verse" | "empty" | "custom"`
+- **커스텀 송폼 빌더 서브패널**:
+  - `custom` 선택 시 모달 내에 동일한 2줄 카드 구조의 송폼 리스트 빌더 노출
+  - 원하는 만큼 행을 추가하여 곡의 전체 송폼을 구성
+  - [프로젝트 생성하기] 클릭 시 생성된 커스텀 구간들을 `serializeProjectDraft`로 변환하여 서버에 즉시 원자적 `PUT` 저장 및 드래프트 상태 로드
+
+---
+
+## 3. 테스트 및 품질 검증 결과
+
+- **신규 테스트 파일**: `test/fe-enhancement-bulk-sections.test.ts` (4개 테스트 시나리오)
+  1. `FE Bulk Sections: ADD_SECTIONS_BULK creates multiple sections with sequential positions` (다중 구간 일괄 생성 및 마디 수 누적 무결성)
+  2. `FE Bulk Sections: ADD_SECTIONS_BULK with insertIndex preserves ordering` (특정 인덱스 삽입 시 순서 보존)
+  3. `FE Bulk Sections: Empty array guard leaves state unchanged` (빈 배열 입력 시 불변 상태 보존)
+  4. `FE Custom Project Builder: Custom initial sections serialize valid server payload` (커스텀 송폼 직렬화 및 서버 페이로드 검증)
+- **품질 지표**:
+  - `npm test`: **79 tests passing (0 failures, 100% pass)**
+  - `npm run typecheck`: **Clean (0 errors)**
+  - `npm run build`: **Next.js Production Build 100% Success (15 routes)**
+
+---
+
+## 4. 작업 산출물 및 변경 파일 요약
+
+| 파일 경로 | 작업 내용 |
+|---|---|
+| `app/lib/client/draft-reducer.ts` | `ADD_SECTIONS_BULK` 액션 선언 및 원자적 불변 리듀서 처리 |
+| `app/lib/client/project-draft-context.tsx` | `addSections` 헬퍼 메서드 추가 및 Provider 연동 |
+| `app/components/songform/AddSectionModal.tsx` | 단일/다중 탭 분기, 행 추가/삭제, 마디 수 퀵 버튼, 일괄 추가 UI 구현 |
+| `app/components/project/CreateProjectModal.tsx` | `custom` 템플릿 옵션 추가 및 인라인 커스텀 송폼 빌더 연동 |
+| `test/fe-enhancement-bulk-sections.test.ts` | 일괄 추가 및 커스텀 프로젝트 생성 테스트 신규 작성 |
+| `app/components/chordchart/BarCard.tsx` | 선택된 마디에서 누적 마디(총 #N) 숨김 및 텍스트 줄바꿈 방지(`whitespace-nowrap`) 적용 |
+| `fe-enhancements.md` | Section 7 기획 및 체크리스트 전체 완료(`[x]`) 갱신 |
+| `wave_log/fe-wave-enhance4.log` | 기술 참조 및 진행 내역 상세 로그 (본 파일) |
+
+---
+
+## 5. 전체 송폼 마디 선택 시 헤더 줄바꿈/겹침 UI 개선
+
+- **문제 현상**: 전체 송폼 보기 상태에서 특정 마디를 클릭/선택하면, 마디 카드 상단 헤더에 `#N (총 #N) [선택됨] [✏️속성]`이 좁은 영역에 모두 노출되면서 `(총 #N)`과 `[선택됨]`, `[속성]` 텍스트가 여러 줄로 강제 줄바꿈되어 비정상적으로 깨지는 현상 발생.
+- **해결 조치**:
+  - 마디가 선택(`isSelected === true`)되었을 때는 곡 전체 누적 마디 번호(`총 #N`)를 표시하지 않고, 선택 뱃지(`[선택됨]`)와 편집 버튼(`[✏️속성]`)에 충분한 공간을 확보.
+  - 모든 뱃지 및 버튼에 `whitespace-nowrap`과 `shrink-0`을 적용하여 좁은 화면에서도 글자가 어색하게 세로로 쪼개지는 현상을 원천 방지.
+

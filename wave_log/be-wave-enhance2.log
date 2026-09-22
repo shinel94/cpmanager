@@ -1,0 +1,37 @@
+# Backend Technique Enhancement Step 3 Log
+
+## Status
+
+- Started: 2026-09-21
+- Scope: pluggable TechniqueMatcher architecture
+- Status: Complete
+
+## Implemented
+
+- Added `app/lib/server/domain/technique-matcher.ts`.
+- Added `TechniqueMatchContext`, `TechniqueMatchResult`, and `TechniqueMatcher`.
+- Added matcher modules:
+  - `modal-interchange-matcher.ts`
+  - `secondary-dominant-matcher.ts`
+  - `slash-chord-matcher.ts`
+  - `chord-variation-matcher.ts`
+- Added matcher registry at `app/lib/server/services/technique-matchers/index.ts`.
+- Refactored `technique-analyzer.ts` to resolve matchers by DB `rule_type`.
+- Preserved existing response fields: `id`, `name`, `description`.
+- Added optional `confidence`, `evidence`, and matcher metadata to results.
+
+## Compatibility Decisions
+
+- DB priority ordering remains the primary rule selection order.
+- Unknown rule types are skipped instead of causing analysis failure.
+- Existing FE fields remain unchanged; additional fields are optional.
+- The existing four rule types retain their previous matching behavior.
+
+## Verification
+
+```text
+npm run typecheck -> passed
+npm test -> passed (62 tests)
+```
+
+Added matcher registry and structured evidence tests. Step 3 is complete. The next enhancement step is precision improvements for existing techniques.

@@ -1,0 +1,38 @@
+# Wave 6 Log
+
+## Status
+
+- Started: 2026-09-21
+- Scope: backend integration verification and Gate 6
+- Status: Complete
+
+## Implemented
+
+- Added `test/wave6.test.ts`.
+- Verified clean SQLite migration and system seed reproduction.
+- Verified seed idempotency with repeated seeding.
+- Verified project save, resize, rollback, and deletion behavior.
+- Verified recommendation, technique analysis, and user progression data isolation.
+- Verified recommendation empty/error behavior and draft-only requests.
+- Verified user progression wildcard search.
+- Verified invalid payload handling without corrupting existing project data.
+
+## Verification
+
+```text
+npm run typecheck -> passed
+npm test -> passed (39 tests, serial test execution)
+npm run build -> passed
+```
+
+## Gate 6 Result
+
+- Clean DB migration and seed are reproducible.
+- Project full-save transactions are atomic.
+- Recommendation and analysis APIs do not mutate project data.
+- System recommendation and user progression data remain isolated.
+- API and domain error cases are covered.
+- Seed re-execution preserves the expected counts.
+- Backend scenarios A, B, and C are covered by route, service, and HTTP verification.
+
+Wave 6 is complete. Backend MVP verification is complete; remaining work is FE integration and end-user usability validation tracked in `fe-todo.md`.

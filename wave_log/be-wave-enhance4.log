@@ -1,0 +1,40 @@
+# Backend Technique Enhancement Step 5 Log
+
+## Status
+
+- Started: 2026-09-21
+- Scope: four-bar progression and cadence analysis
+- Status: Complete with deferred bass-line analysis
+
+## Implemented
+
+- Added `app/lib/server/services/progression-analyzer.ts`.
+- Added four-bar block pattern detection for:
+  - Authentic cadence: `V -> I`
+  - Half cadence: ending on `V`
+  - Plagal cadence: `IV -> I`
+  - Deceptive cadence: `V -> VI`
+  - `ii - V - I`
+  - `IV - V - I`
+  - Circle-of-fifths movement
+  - Repeating two-bar loop
+- Added `progressionPattern` and `progressionAlternatives` to the analysis API response.
+- Preserved the existing `technique` response fields and FE compatibility.
+- Added block-level progression tests and analysis API compatibility coverage.
+
+## Decisions
+
+- Progression analysis ignores blocks containing multi-chord bars to avoid ambiguous ordering.
+- Empty bars are skipped when detecting patterns; the analyzer still requires a four-bar context.
+- Results are confidence-ranked and the highest-confidence pattern is returned as `progressionPattern`.
+- Additional matches are returned as `progressionAlternatives`.
+- Bass-line motion remains Enhancement Step 6 because it requires ordered bass metadata across each chord slot.
+
+## Verification
+
+```text
+npm run typecheck -> passed
+npm test -> passed (67 tests)
+```
+
+Step 5 is complete. The next remaining Wave B item is Step 6 bass-line and advanced reharmonization analysis.

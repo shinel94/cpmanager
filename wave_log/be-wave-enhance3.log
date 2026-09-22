@@ -1,0 +1,33 @@
+# Backend Technique Enhancement Step 4 Log
+
+## Status
+
+- Started: 2026-09-21
+- Scope: precision improvements for existing technique matchers
+- Status: Complete with one deferred item
+
+## Implemented
+
+- Secondary dominant matcher now supports dominant `7` and `9`.
+- Secondary dominant results include `targetDegree` metadata.
+- Secondary dominant matching rejects `VII` and diminished targets to reduce false positives.
+- Added secondary leading-tone diminished matcher.
+- Added seeded `secondary_leading_tone` rule type.
+- Added modal interchange rules for `bVII` and `bIII`.
+- Modal interchange results include `sourceMode` metadata.
+- Slash chord matcher now classifies first, second, third inversion, or generic slash bass.
+- Expanded the seed rule count from 5 to 8.
+- Updated affected seed and matcher tests.
+
+## Deferred
+
+- Full descending/ascending bass-line and slash-chord relationship analysis remains for Enhancement Step 6. Step 4 currently returns inversion metadata only.
+
+## Verification
+
+```text
+npm run typecheck -> passed
+npm test -> passed (63 tests)
+```
+
+Step 4 is complete. The next enhancement step is the four-bar `ProgressionAnalyzer` for cadences and block-level patterns.

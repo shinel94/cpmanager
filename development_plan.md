@@ -43,7 +43,8 @@ Next.js 기반 → 환경/스키마 → 조성·코드 변환 → 프로젝트 �
 | Wave 2 | 순수 도메인 엔진 | 완료 | 코드 변환, 다이어토닉, 블록 분할, 도수 매칭 |
 | Wave 3 | Repository·payload 검증·Meta API | 완료 | 프로젝트 저장소, 사용자 진행 저장소, Meta API |
 | Wave 4 | 프로젝트 CRUD·차트 조회 API | 완료 | `app/api/projects`, 차트 조회 |
-| Wave 5 | 추천·기법·사용자 진행 API | 예정 | 추천·분석·사용자 진행 Route Handler |
+| Wave 5 | 추천·기법·사용자 진행 API | 완료 | 추천·분석·사용자 진행 Route Handler |
+| Wave 6 | Backend 통합 검증 | 완료 | clean DB·API 격리·롤백·idempotency 테스트 |
 | FE Waves | Client UI·초안 상태·화면 | 별도 진행 | `fe-todo.md` 기준 |
 
 Wave별 상세 이슈와 결정사항은 `wave_log/wave0.log`부터 `wave_log/wave3.log`까지 기록한다.
@@ -145,7 +146,7 @@ app/
 |---|---|---|
 | 1 | 구간 추가 (기본명 또는 직접 입력) | FR-FORM-001 |
 | 2 | 마디 수 설정 (1 이상 정수) | FR-FORM-003 |
-| 3 | 순서 변경 | FR-FORM-002 |
+| 3 | 순서 변경 (드래그 앤 드롭 & 상/하 이동 버튼) | FR-FORM-002 |
 | 4 | 구간 삭제 (하위 마디·코드 함께 삭제) | FR-FORM-004 |
 
 기본 구간명: Intro, Verse, Pre-Chorus, Chorus, Interlude, Bridge, Outro
@@ -172,7 +173,7 @@ app/
 
 ---
 
-### Phase 6. 4마디 추천 (Wave 5 예정)
+### Phase 6. 4마디 추천 (Wave 5 구현 완료)
 
 핵심 차별 기능. Phase 5가 끝난 뒤에 붙인다.
 
@@ -199,7 +200,7 @@ app/
 
 ---
 
-### Phase 7. 기법 분석 (Wave 5 예정)
+### Phase 7. 기법 분석 (Wave 5 구현 완료)
 
 코드 변경 직후 호출한다.
 
@@ -215,7 +216,7 @@ app/
 
 ---
 
-### Phase 8. 사용자 진행 API (Wave 5 예정)
+### Phase 8. 사용자 진행 API (Wave 5 구현 완료)
 
 추천과 완전히 분리된 화면에서만 다룬다.
 
@@ -564,7 +565,7 @@ PUT 성공 응답은 DB에서 새로 발급된 정수 ID를 포함한 최신 프
 
 ---
 
-### 4.6 추천 — Phase 6 (Wave 5 예정)
+### 4.6 추천 — Phase 6 (Wave 5 구현 완료)
 
 | ID | Method | Path | 설명 | 관련 FR |
 |---|---|---|---|---|
@@ -651,7 +652,7 @@ PUT 성공 응답은 DB에서 새로 발급된 정수 ID를 포함한 최신 프
 
 ---
 
-### 4.7 기법 분석 — Phase 7 (Wave 5 예정)
+### 4.7 기법 분석 — Phase 7 (Wave 5 구현 완료, 진행 패턴은 Enhancement Step 5 포함)
 
 | ID | Method | Path | 설명 | 관련 FR |
 |---|---|---|---|---|
@@ -681,7 +682,7 @@ PUT 성공 응답은 DB에서 새로 발급된 정수 ID를 포함한 최신 프
 3. 대상 코드가 첫 코드이면 이전 마디 관계, 마지막 코드이면 다음 마디 관계를 분석
 4. 블록 경계 넘김 금지
 5. `technique_rules` 중 `enabled=1`을 priority DESC, id ASC로 검사
-6. 최상위 1개만 반환, 없으면 `{ "technique": null }`
+6. 최상위 기법 1개와 4마디 진행 패턴을 각각 계산한다.
 
 응답 예:
 
@@ -692,7 +693,15 @@ PUT 성공 응답은 DB에서 새로 발급된 정수 ID를 포함한 최신 프
     "id": 3,
     "name": "모달 인터체인지",
     "description": "같은 으뜸음의 평행조에서 코드를 빌려 온 진행입니다."
-  }
+  },
+  "progressionPattern": {
+    "type": "cadence",
+    "name": "정격 종지",
+    "description": "도미넌트에서 토닉으로 해결되는 정격 종지입니다.",
+    "bars": [3, 4],
+    "confidence": 0.98
+  },
+  "progressionAlternatives": []
 }
 ```
 
@@ -700,7 +709,7 @@ PUT 성공 응답은 DB에서 새로 발급된 정수 ID를 포함한 최신 프
 
 ---
 
-### 4.8 사용자 진행 — Phase 8 (Wave 5 예정)
+### 4.8 사용자 진행 — Phase 8 (Wave 5 구현 완료)
 
 | ID | Method | Path | 설명 | 관련 FR |
 |---|---|---|---|---|
@@ -767,7 +776,7 @@ PUT 성공 응답은 DB에서 새로 발급된 정수 ID를 포함한 최신 프
 | S2 | Wave 2 | 코드 변환, 다이어토닉, 블록 분할, 도수 매칭 |
 | S3 | Wave 3 | Repository, 전체 저장 트랜잭션, Meta API |
 | S4 | Wave 4 | 프로젝트 CRUD Route Handler, 코드 차트 조회 API (완료) |
-| S5 | Wave 5 | 추천·기법 분석·사용자 진행 API |
+| S5 | Wave 5 | 추천·기법 분석·사용자 진행 API (완료) |
 | S6 | FE Waves | `fe-todo.md` 기반 Client UI와 초안 상태 통합 |
 
 한 줄 요약: **변환 엔진 → 프로젝트/송폼/차트 저장 → progression 시드 추천 → 기법 → 사용자 검색** 순으로 만든다.

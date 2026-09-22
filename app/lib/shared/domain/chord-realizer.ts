@@ -2,57 +2,18 @@ import {
   MAJOR_DIATONIC_QUALITIES,
   TONICS,
   normalizeBassDegree,
-  normalizeDegree,
   normalizeStep,
   type ChordStep,
   type Tonic,
 } from "@/app/lib/shared/catalog/chord-catalog";
-
-const TONIC_PITCHES: Record<Tonic, number> = {
-  C: 0,
-  Db: 1,
-  D: 2,
-  Eb: 3,
-  E: 4,
-  F: 5,
-  Gb: 6,
-  G: 7,
-  Ab: 8,
-  A: 9,
-  Bb: 10,
-  B: 11,
-};
+import { pitchForDegree } from "@/app/lib/shared/domain/harmonic-math";
 
 const FLAT_NOTE_NAMES = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"];
-const DEGREE_PITCHES: Record<string, number> = {
-  I: 0,
-  II: 2,
-  III: 4,
-  IV: 5,
-  V: 7,
-  VI: 9,
-  VII: 11,
-};
 
 function assertTonic(tonic: string): asserts tonic is Tonic {
   if (!TONICS.includes(tonic as Tonic)) {
     throw new Error(`Unsupported tonic: ${tonic}`);
   }
-}
-
-function parseDegree(degree: string): { accidental: number; roman: string } {
-  const normalized = normalizeDegree(degree);
-  const match = normalized.match(/^([b#]?)(I|II|III|IV|V|VI|VII)$/);
-  if (!match) throw new Error(`Unsupported normalized degree: ${degree}`);
-  return {
-    accidental: match[1] === "b" ? -1 : match[1] === "#" ? 1 : 0,
-    roman: match[2],
-  };
-}
-
-function pitchForDegree(tonic: Tonic, degree: string): number {
-  const parsed = parseDegree(degree);
-  return (TONIC_PITCHES[tonic] + DEGREE_PITCHES[parsed.roman] + parsed.accidental + 12) % 12;
 }
 
 function suffixForChord(step: ChordStep): string {

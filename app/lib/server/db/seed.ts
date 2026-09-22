@@ -177,6 +177,12 @@ function validateTechniqueRules(): void {
   const allowedTypes = new Set([
     "modal_interchange",
     "secondary_dominant",
+    "secondary_leading_tone",
+    "tritone_substitution",
+    "backdoor_dominant",
+    "chromatic_mediant",
+    "passing_diminished",
+    "common_tone_diminished",
     "slash_chord",
     "chord_variation",
   ]);

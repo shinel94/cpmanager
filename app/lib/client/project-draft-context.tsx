@@ -32,6 +32,10 @@ export type ProjectDraftContextType = {
   // Actions
   updateMeta: (name: string, tonic?: Tonic) => void;
   addSection: (name: string, barCount?: number, insertIndex?: number) => void;
+  addSections: (
+    sections: Array<{ name: string; barCount?: number }>,
+    insertIndex?: number,
+  ) => void;
   removeSection: (sectionId: string) => void;
   reorderSections: (fromIndex: number, toIndex: number) => void;
   updateSectionBars: (sectionId: string, barCount: number) => void;
@@ -119,6 +123,19 @@ export function ProjectDraftProvider({
       dispatchAction({
         type: "ADD_SECTION",
         payload: { name, barCount, insertIndex },
+      });
+    },
+    [dispatchAction],
+  );
+
+  const addSections = useCallback(
+    (
+      sections: Array<{ name: string; barCount?: number }>,
+      insertIndex?: number,
+    ) => {
+      dispatchAction({
+        type: "ADD_SECTIONS_BULK",
+        payload: { sections, insertIndex },
       });
     },
     [dispatchAction],
@@ -263,6 +280,7 @@ export function ProjectDraftProvider({
 
         updateMeta,
         addSection,
+        addSections,
         removeSection,
         reorderSections,
         updateSectionBars,
