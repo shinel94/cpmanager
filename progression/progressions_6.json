@@ -1,0 +1,514 @@
+[
+  {
+    "id": 161,
+    "name": "IV - V - vi - I (J-Rock 코마로 1도 리턴형)",
+    "form_tags": ["Chorus", "Intro"],
+    "description": "백넘버(back number), 하쿠(Haku) 등에서 코러스의 폭발적인 질주와 개방감을 만드는 4-5-6-1 앤섬 진행",
+    "popularity_score": 96,
+    "connectivity_score": 93,
+    "diversity_group": "jrock_anthem",
+    "priority": 10,
+    "steps": [
+      { "position": 1, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "V", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "vi", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "I", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 162,
+    "name": "IV - V - III7 - vi (감성 밴드 세컨더리 도미넌트)",
+    "form_tags": ["Chorus", "Bridge"],
+    "description": "백넘버 서정 발라드/록의 시그니처 진행으로, III7의 장3음이 vi단조로 강력하게 이끌며 애절함을 극대화하는 진행",
+    "popularity_score": 95,
+    "connectivity_score": 92,
+    "diversity_group": "secondary_dominant",
+    "priority": 10,
+    "steps": [
+      { "position": 1, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "V", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "III", "quality": "dominant", "extension": "7", "bass_degree": null },
+      { "position": 4, "degree": "vi", "quality": "minor", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 163,
+    "name": "I - V/7 - vi - IV (하강 베이스 이모코어 록 캐논)",
+    "form_tags": ["Verse", "Chorus", "Intro"],
+    "description": "험브레더스(Hump Back), 백넘버의 벌스/코러스에서 베이스가 반음씩 순차 하강하며 묵직한 청춘의 감정을 쏟아내는 진행",
+    "popularity_score": 92,
+    "connectivity_score": 94,
+    "diversity_group": "descending_bass",
+    "priority": 9,
+    "steps": [
+      { "position": 1, "degree": "I", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "V", "quality": "major", "extension": null, "bass_degree": "VII" },
+      { "position": 3, "degree": "vi", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 164,
+    "name": "IV - I - V - vi (서브도미넌트 스타트 멜로딕 록/인디 팝)",
+    "form_tags": ["Chorus", "Verse"],
+    "description": "하쿠, 험브레더스 등 현대 J-Band에서 청량하고 가슴 벅찬 감정선을 이끌어내는 대표적인 4-1-5-6 루프",
+    "popularity_score": 94,
+    "connectivity_score": 91,
+    "diversity_group": "subdominant_start",
+    "priority": 9,
+    "steps": [
+      { "position": 1, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "I", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "V", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "vi", "quality": "minor", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 165,
+    "name": "vi - IV - I - V (청춘 질주 펑크 록 / 험브레더스 스타일)",
+    "form_tags": ["Chorus", "Intro", "Verse"],
+    "description": "험브레더스 특유의 3피스 기타 리프와 직선적인 스트레이트 드럼 비트에 최적화된 마이너 파워팝/펑크 진행",
+    "popularity_score": 93,
+    "connectivity_score": 90,
+    "diversity_group": "diatonic_pop",
+    "priority": 9,
+    "steps": [
+      { "position": 1, "degree": "vi", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "I", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "V", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 166,
+    "name": "IV - V - iii - IV (하쿠 몽환적 루프 / 4도 미해소 순환)",
+    "form_tags": ["Verse", "Interlude"],
+    "description": "6도로 해결하지 않고 4도로 다시 되돌아가며 공중에 붕 뜬 듯한 아련함과 공간감을 연출하는 감성 인디 록 루프",
+    "popularity_score": 87,
+    "connectivity_score": 89,
+    "diversity_group": "jrock_anthem",
+    "priority": 8,
+    "steps": [
+      { "position": 1, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "V", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "iii", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 167,
+    "name": "ii - IV - I - V (J-밴드 인디 팝 서정 도입부)",
+    "form_tags": ["Verse", "Intro"],
+    "description": "2도 마이너에서 4도로 부드럽게 상승한 뒤 1-5로 안착하는 백넘버 계열의 서정적 어쿠스틱/인디록 벌스 진행",
+    "popularity_score": 88,
+    "connectivity_score": 92,
+    "diversity_group": "diatonic_pop",
+    "priority": 8,
+    "steps": [
+      { "position": 1, "degree": "ii", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "I", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "V", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 168,
+    "name": "IV - V - vi - V (질주감 넘치는 프리코러스 5도 킥)",
+    "form_tags": ["Pre-Chorus"],
+    "description": "후렴구 진입 직전 6도까지 벅차오르게 상승한 뒤 5도 도미넌트로 시원하게 열어주며 에너지를 폭발시키는 빌드업",
+    "popularity_score": 91,
+    "connectivity_score": 94,
+    "diversity_group": "stepwise_ascent",
+    "priority": 9,
+    "steps": [
+      { "position": 1, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "V", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "vi", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "V", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 169,
+    "name": "IV - V - iii - vi (K-Pop 걸그룹 청량 후렴의 황금 공식)",
+    "form_tags": ["Chorus", "Pre-Chorus"],
+    "description": "트와이스, 여자친구, 아이즈원 등 3~4세대 K-Pop 청량/벅차오름의 정수를 보여주는 대표적인 황금 진행",
+    "popularity_score": 98,
+    "connectivity_score": 95,
+    "diversity_group": "royal_road",
+    "priority": 10,
+    "steps": [
+      { "position": 1, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "V", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "iii", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "vi", "quality": "minor", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 170,
+    "name": "vi - IV - I - V (틴크러시 / 걸크러시 마이너 댄스 팝)",
+    "form_tags": ["Chorus", "Verse"],
+    "description": "블랙핑크, 르세라핌, 아이브, ITZY 등 강렬한 비트와 세련된 카리스마를 뿜어내는 모던 K-Pop 댄스곡 시그니처",
+    "popularity_score": 97,
+    "connectivity_score": 93,
+    "diversity_group": "diatonic_pop",
+    "priority": 10,
+    "steps": [
+      { "position": 1, "degree": "vi", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "I", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "V", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 171,
+    "name": "IV - I - V - vi (이지리스닝 뉴 K-Pop / 감성 R&B 팝)",
+    "form_tags": ["Chorus", "Verse"],
+    "description": "뉴진스, 세븐틴, 투모로우바이투게더 등 편안하면서도 중독적인 Y2K/이지리스닝 감성의 중심 진행",
+    "popularity_score": 95,
+    "connectivity_score": 92,
+    "diversity_group": "subdominant_start",
+    "priority": 9,
+    "steps": [
+      { "position": 1, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "I", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "V", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "vi", "quality": "minor", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 172,
+    "name": "ii - V - I - IV (K-Pop 댄스곡 그루비 프리코러스 / 5도 하강)",
+    "form_tags": ["Pre-Chorus", "Interlude"],
+    "description": "레드벨벳, NCT, 샤이니 등 세련된 K-Pop 프리코러스에서 텐션을 차곡차곡 쌓아올리는 재즈 팝 턴어라운드",
+    "popularity_score": 90,
+    "connectivity_score": 95,
+    "diversity_group": "circle_of_fifths",
+    "priority": 9,
+    "steps": [
+      { "position": 1, "degree": "ii", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "V", "quality": "dominant", "extension": "7", "bass_degree": null },
+      { "position": 3, "degree": "I", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 173,
+    "name": "bVI - bVII - I - I (에픽 K-Pop 모달 브릿지 / 마리오 카덴스)",
+    "form_tags": ["Bridge", "Outro"],
+    "description": "에스파, 스트레이키즈, 엔믹스 등 곡의 전환점에서 웅장하고 미래지향적인 충격을 선사하는 모달 인터체인지 진행",
+    "popularity_score": 89,
+    "connectivity_score": 86,
+    "diversity_group": "modal_interchange",
+    "priority": 9,
+    "steps": [
+      { "position": 1, "degree": "bVI", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "bVII", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "I", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "I", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 174,
+    "name": "IV - iv - I - I (K-Pop 감성 보컬/발라드 서브도미넌트 마이너)",
+    "form_tags": ["Bridge", "Outro", "Chorus"],
+    "description": "아이유, 태연 등의 보컬곡 후렴구 끝이나 브릿지에서 깊은 여운과 애절함을 남기는 iv 차용화음 카덴스",
+    "popularity_score": 92,
+    "connectivity_score": 90,
+    "diversity_group": "modal_interchange",
+    "priority": 9,
+    "steps": [
+      { "position": 1, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "IV", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "I", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "I", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 175,
+    "name": "vi - V - IV - III7 (K-Pop 댄스 오모테 긴장 래핑/프리코러스)",
+    "form_tags": ["Pre-Chorus", "Verse"],
+    "description": "방탄소년단, 스트레이키즈 등의 격정적인 랩 파트 및 후렴 직전 폭풍전야 긴장감 형성 시그니처 진행",
+    "popularity_score": 91,
+    "connectivity_score": 93,
+    "diversity_group": "secondary_dominant",
+    "priority": 9,
+    "steps": [
+      { "position": 1, "degree": "vi", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "V", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "III", "quality": "dominant", "extension": "7", "bass_degree": null }
+    ]
+  },
+  {
+    "id": 176,
+    "name": "I - III7 - vi - IV (K-Pop 레트로 팝 / 아이유·레드벨벳 빈티지)",
+    "form_tags": ["Verse", "Chorus"],
+    "description": "아이유('좋은 날', '분홍신'), 레드벨벳 등 세련된 빈티지 스윙/재즈 팝 느낌을 주는 3도 세컨더리 도미넌트 도약",
+    "popularity_score": 88,
+    "connectivity_score": 91,
+    "diversity_group": "secondary_dominant",
+    "priority": 8,
+    "steps": [
+      { "position": 1, "degree": "I", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "III", "quality": "dominant", "extension": "7", "bass_degree": null },
+      { "position": 3, "degree": "vi", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 177,
+    "name": "IV - III7 - vi - I (보컬로이드 황금률 마루사 진행 / Just the Two of Us)",
+    "form_tags": ["Chorus", "Intro", "Verse"],
+    "description": "요아소비(Ayase), DECO*27 등 보컬로이드/우타이테 씬에서 가장 사랑받는 펑키하고 세련된 쾌속 루프",
+    "popularity_score": 98,
+    "connectivity_score": 96,
+    "diversity_group": "vocaloid_speed",
+    "priority": 10,
+    "steps": [
+      { "position": 1, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "III", "quality": "dominant", "extension": "7", "bass_degree": null },
+      { "position": 3, "degree": "vi", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "I", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 178,
+    "name": "vi - V - IV - III7 (보컬로이드 질주곡의 상징 오모테 진행)",
+    "form_tags": ["Chorus", "Pre-Chorus", "Intro"],
+    "description": "Neru, wowaka 등 어둡고 질주하는 초고속 BPM 보컬로이드 록의 시그니처 비장미 진행",
+    "popularity_score": 96,
+    "connectivity_score": 94,
+    "diversity_group": "vocaloid_speed",
+    "priority": 10,
+    "steps": [
+      { "position": 1, "degree": "vi", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "V", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "III", "quality": "dominant", "extension": "7", "bass_degree": null }
+    ]
+  },
+  {
+    "id": 179,
+    "name": "IV - V - vi - vi (고속 J-Pop/우타이테 6도 록 질주 진행)",
+    "form_tags": ["Chorus", "Intro"],
+    "description": "카게로우 프로젝트(Jin), Eve 등에서 후렴구 멜로디가 쉼 없이 내달릴 때 바탕을 지탱하는 파워풀한 록 루프",
+    "popularity_score": 93,
+    "connectivity_score": 92,
+    "diversity_group": "vocaloid_speed",
+    "priority": 9,
+    "steps": [
+      { "position": 1, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "V", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "vi", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "vi", "quality": "minor", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 180,
+    "name": "IV - V - I - bVII (보컬로이드 서프라이즈 믹솔리디안 턴)",
+    "form_tags": ["Chorus", "Bridge"],
+    "description": "1도로 시원하게 해결한 직후 bVII로 깜짝 전조감을 주며 다음 마디 4도로의 자연스러운 연결을 만드는 천재적 턴어라운드",
+    "popularity_score": 89,
+    "connectivity_score": 91,
+    "diversity_group": "modal_interchange",
+    "priority": 9,
+    "steps": [
+      { "position": 1, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "V", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "I", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "bVII", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 181,
+    "name": "bVI - bVII - vi - I (모달 크로매틱 질주 우타이테 리프)",
+    "form_tags": ["Intro", "Chorus"],
+    "description": "카미야마 요우, 메가테라 제로 등 감성 우타이테 록에서 단조의 어둠과 장조의 화려함을 교차시키는 역동적 진행",
+    "popularity_score": 90,
+    "connectivity_score": 88,
+    "diversity_group": "vocaloid_speed",
+    "priority": 9,
+    "steps": [
+      { "position": 1, "degree": "bVI", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "bVII", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "vi", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "I", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 182,
+    "name": "IV - iv - iii - VI7 (멜로딕 보컬로이드 발라드 환상 진행)",
+    "form_tags": ["Bridge", "Chorus"],
+    "description": "4도 마이너(iv)의 눈물겨운 차용과 VI7 세컨더리 도미넌트가 결합하여 애니메이션 OST 피날레 같은 벅찬 감동을 주는 진행",
+    "popularity_score": 88,
+    "connectivity_score": 89,
+    "diversity_group": "secondary_dominant",
+    "priority": 8,
+    "steps": [
+      { "position": 1, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "IV", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "iii", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "VI", "quality": "dominant", "extension": "7", "bass_degree": null }
+    ]
+  },
+  {
+    "id": 183,
+    "name": "vi - IV - V - I (마이너 스타트 쾌속 메이저 해방 카덴스)",
+    "form_tags": ["Chorus", "Verse"],
+    "description": "어둡게 시작하여 5도 도미넌트를 거쳐 1도로 환하게 해방되는 쾌속 BPM 보컬로이드 후렴 전반부 진행",
+    "popularity_score": 92,
+    "connectivity_score": 95,
+    "diversity_group": "diatonic_pop",
+    "priority": 9,
+    "steps": [
+      { "position": 1, "degree": "vi", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "V", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "I", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 184,
+    "name": "bVI - bVII - V - vi (우타이테 사비 종결 마이너 카덴스)",
+    "form_tags": ["Chorus", "Outro"],
+    "description": "마리오 카덴스 상행 후 V-vi로 격정적인 마이너 종지를 맺으며 짙은 여운을 남기는 보컬로이드 클라이맥스 진행",
+    "popularity_score": 89,
+    "connectivity_score": 91,
+    "diversity_group": "modal_interchange",
+    "priority": 8,
+    "steps": [
+      { "position": 1, "degree": "bVI", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "bVII", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "V", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "vi", "quality": "minor", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 185,
+    "name": "I - V - vi - IV (그린데이 불멸의 팝 펑크 앤섬)",
+    "form_tags": ["Chorus", "Verse", "Intro"],
+    "description": "Green Day('Basket Case', 'When I Come Around') 등 전 세계 팝 펑크 밴드를 지배한 3화음 파워코드의 왕",
+    "popularity_score": 98,
+    "connectivity_score": 95,
+    "diversity_group": "pop_punk",
+    "priority": 10,
+    "steps": [
+      { "position": 1, "degree": "I", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "V", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "vi", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 186,
+    "name": "I - V - IV - IV (그린데이 스트레이트 펑크 록 앤서)",
+    "form_tags": ["Chorus", "Verse"],
+    "description": "단순하지만 4도에 2마디 머무르며 드라이브감과 시원한 록킹 사운드를 극대화하는 클래식 펑크 앤섬 진행",
+    "popularity_score": 92,
+    "connectivity_score": 91,
+    "diversity_group": "pop_punk",
+    "priority": 9,
+    "steps": [
+      { "position": 1, "degree": "I", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "V", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 187,
+    "name": "vi - IV - I - V (그린데이 21 Guns 식 록 발라드)",
+    "form_tags": ["Verse", "Chorus"],
+    "description": "Green Day('21 Guns', 'Boulevard of Broken Dreams') 등 비장하고 쓸쓸한 멜로딕 록 발라드의 대명사",
+    "popularity_score": 95,
+    "connectivity_score": 92,
+    "diversity_group": "pop_punk",
+    "priority": 10,
+    "steps": [
+      { "position": 1, "degree": "vi", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "I", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "V", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 188,
+    "name": "IV - I - V - I (오아시스/펑크 완전 종지 앤서 카덴스)",
+    "form_tags": ["Chorus", "Outro"],
+    "description": "오아시스나 팝 펑크 후렴의 마지막 4마디를 확실하게 종지 짓는 호쾌한 4-1-5-1 카덴스 진행",
+    "popularity_score": 91,
+    "connectivity_score": 96,
+    "diversity_group": "cadence_resolution",
+    "priority": 9,
+    "steps": [
+      { "position": 1, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "I", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "V", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "I", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 189,
+    "name": "I - bVII - IV - I (오아시스 믹솔리디안 브릿팝 앤섬)",
+    "form_tags": ["Verse", "Chorus", "Intro"],
+    "description": "Oasis('Live Forever', 'Morning Glory', 'Wonderwall' 프리코러스) 등 90년대 브릿팝의 황금기를 상징하는 상쾌한 bVII 록 사운드",
+    "popularity_score": 94,
+    "connectivity_score": 90,
+    "diversity_group": "britpop",
+    "priority": 10,
+    "steps": [
+      { "position": 1, "degree": "I", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "bVII", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "I", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 190,
+    "name": "I - V - vi - iii (오아시스 Don't Look Back in Anger 캐논 앤섬)",
+    "form_tags": ["Chorus", "Verse"],
+    "description": "전 세계 수백만 명이 떼창하는 'Don't Look Back in Anger' 후렴의 서정적인 파헬벨 캐논형 브릿팝 진행",
+    "popularity_score": 96,
+    "connectivity_score": 94,
+    "diversity_group": "britpop",
+    "priority": 10,
+    "steps": [
+      { "position": 1, "degree": "I", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "V", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "vi", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "iii", "quality": "minor", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 191,
+    "name": "IV - V - I - vi (오아시스 Stand By Me 식 팝 록 앤서)",
+    "form_tags": ["Chorus", "Bridge"],
+    "description": "오아시스, 비틀즈 스타일의 클래식한 브릿팝 멜로디 라인을 살려주는 따뜻하고 대중적인 진행",
+    "popularity_score": 92,
+    "connectivity_score": 93,
+    "diversity_group": "britpop",
+    "priority": 9,
+    "steps": [
+      { "position": 1, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "V", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "I", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "vi", "quality": "minor", "extension": null, "bass_degree": null }
+    ]
+  },
+  {
+    "id": 192,
+    "name": "ii - IV - I - V (오아시스 몽환적 어쿠스틱 그루브)",
+    "form_tags": ["Verse", "Intro"],
+    "description": "Oasis('Champagne Supernova'), Radiohead 초기 등 나른하고 사이키델릭한 브릿팝 벌스의 대표적 2도 마이너 출발 진행",
+    "popularity_score": 89,
+    "connectivity_score": 91,
+    "diversity_group": "britpop",
+    "priority": 8,
+    "steps": [
+      { "position": 1, "degree": "ii", "quality": "minor", "extension": null, "bass_degree": null },
+      { "position": 2, "degree": "IV", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 3, "degree": "I", "quality": "major", "extension": null, "bass_degree": null },
+      { "position": 4, "degree": "V", "quality": "major", "extension": null, "bass_degree": null }
+    ]
+  }
+]

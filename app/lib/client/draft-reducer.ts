@@ -14,6 +14,7 @@ import {
 export type DraftAction =
   | { type: "SET_PROJECT"; payload: ProjectDraft }
   | { type: "UPDATE_META"; payload: { name?: string; tonic?: Tonic } }
+  | { type: "SET_TEMPO"; payload: { tempo: number } }
   | {
       type: "ADD_SECTION";
       payload: { name: string; barCount?: number; insertIndex?: number };
@@ -81,6 +82,14 @@ export function projectDraftReducer(
         name: action.payload.name ?? state.name,
         tonic: action.payload.tonic ?? state.tonic,
       };
+
+    case "SET_TEMPO": {
+      const tempo = Math.min(240, Math.max(40, Math.round(action.payload.tempo || 120)));
+      return {
+        ...state,
+        tempo,
+      };
+    }
 
     case "ADD_SECTION": {
       const { name, barCount = 4, insertIndex } = action.payload;

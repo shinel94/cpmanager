@@ -169,7 +169,7 @@ cpmanager/
 ├── scripts/                           # DB 마이그레이션 및 시딩 CLI 스크립트
 ├── suggestion/                        # 아키텍처 분석 및 개선 제안서
 │   └── typesafe-ai.md                 # TypeSafe AI 기반 리팩토링 제안서
-├── test/                              # node:test 기반 통합/단위 테스트 스위트 (79개 테스트)
+├── test/                              # node:test 기반 통합/단위 테스트 스위트 (80개 테스트)
 ├── wave_log/                          # 단계별 개발 로그 및 기술 참조 아카이브 (총 23개 로그)
 ├── development_plan.md                # 6단계 점진적 개발 계획서
 ├── functional_specification.md        # 세부 기능 명세서
@@ -206,13 +206,19 @@ npm run db:migrate
 npm run db:seed
 ```
 
-### 3. 개발 서버 실행
+### 3. 신규 코드 진행 증분 업데이트 (선택 사항)
+기존 DB와 사용자 프로젝트 데이터를 보존한 채 신규 진행(Part 6: J-Rock, K-Pop, 보컬로이드, 팝 펑크/브릿팝 등 총 32선)을 증분 반영합니다.
+```bash
+npm run db:update progression/seed_progressions_6.sql
+```
+
+### 4. 개발 서버 실행
 ```bash
 npm run dev
 ```
 브라우저에서 [http://localhost:3000](http://localhost:3000)으로 접속하여 작곡 워크스페이스를 이용할 수 있습니다.
 
-### 4. 프로덕션 빌드 및 실행
+### 5. 프로덕션 빌드 및 실행
 ```bash
 npm run build
 npm start
@@ -228,7 +234,7 @@ npm start
 # TypeScript 정적 타입 검사 (0 errors)
 npm run typecheck
 
-# 단위 및 통합 테스트 실행 (79개 테스트 100% 통과)
+# 단위 및 통합 테스트 실행 (80개 테스트 100% 통과)
 npm test
 ```
 

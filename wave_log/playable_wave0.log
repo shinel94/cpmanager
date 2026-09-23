@@ -1,0 +1,92 @@
+# Audio Playback & MIDI Export Enhancement Wave 0 Log
+
+## Status
+
+- Date: 2026-09-23
+- Scope: 코드 진행 청음(Audio Playback) 및 DAW용 MIDI 파일 내보내기(MIDI Export) 기능 기획, 기술 검토, 잠재적 문제점 분석 및 개발 계획 수립
+- Status: Complete (사전 검토 및 계획 확정 완료)
+
+---
+
+## 1. 주요 검토 및 아키텍처 결정 사항 (Architectural Decisions)
+
+### 1.1 오디오 재생 엔진 라이브러리 선정
+- **결정**: `Tone.js` 채택
+- **근거**:
+  - `Tone.Transport` 기반의 지터 없는 정밀 마디/비트 타임라인 스케줄링.
+  - 외부 사운드폰트 로딩 대기 시간 없이 즉시 발음되는 내장 `Tone.PolySynth` 지원.
+  - 브라우저 자동재생 정책에 부합하는 `AudioContext` 언락 및 메트로놈(클릭 신스) 구현 용이.
+
+### 1.2 DAW 연동을 위한 MIDI 파일 내보내기 라이브러리 선정
+- **결정**: `midi-writer-js` 채택
+- **근거**:
+  - `@tonejs/midi`는 MIDI 파일 파싱/읽기 중심인 반면, `midi-writer-js`는 MIDI 파일 생성(Writing) 전용으로 특화됨.
+  - 온음표(`'1'`), 2분음표(`'2'`), 4분음표(`'4'`) 등 음악적 길이(Duration notation)와 화음 배열(`pitch: ['C4', 'E4', 'G4']`)을 직관적으로 지원하여 코드 차트 데이터 모델과 100% 일치.
+  - 약 15KB의 무의존성(Zero-dependency) 초경량 라이브러리로 번들 부하 최소화.
+  - 트랙을 Track 1(Chords), Track 2(Bass)로 분리 생성하여 DAW 가상악기 매핑 편의성 극대화.
+
+### 1.3 데이터 저장소 분리 정책
+- **DB 테이블 (`projects`)**:
+  - `tempo` (BPM: INTEGER NOT NULL DEFAULT 120 CHECK BETWEEN 40 AND 240)
+  - `time_signature` (TEXT NOT NULL DEFAULT '4/4')
+- **브라우저 로컬 스토리지 (User Preferences)**:
+  - `cpmanager_playback_volume` (기본값 0.8)
+  - `cpmanager_metronome_enabled` (기본값 false)
+  - `cpmanager_loop_enabled` (기본값 false)
+  - `cpmanager_instrument_preset` (기본값 warm_piano)
+
+---
+
+## 2. 사전 기술 검토(Pre-development Review) 및 사용자 결정 반영
+
+실제 개발 착수 전, TODO 목록에 대한 엣지 케이스 및 잠재적 문제점을 도출하여 사용자와 논의 후 다음과 같이 조치함:
+
+### 2.1 [사용자 지침] 추후 보완 과제로 분리 (Issue 1)
+- **보이싱 고도화**:
+  - 코드 간 급격한 옥타브 점프 방지를 위한 C3~C5 옥타브 래핑(Smooth Voicing / Octave Clamping) 및 `sus4` 3도 생략/4도 치환 규칙은 1차 구현 완료 후 사운드 튜닝 단계의 추후 보완 과제로 분리.
+
+### 2.2 [사용자 지침] 참고 사항으로만 유지 (Issue 4)
+- **UI 및 단축키 최적화**:
+  - 고빈도 비트 틱(`onTick`) 발생 시 전체 워크스페이스 리렌더링 방지 설계.
+  - 텍스트 인풋 입력 중 스페이스바 재생 토글 방지 이벤트 가드.
+  - 곡 전체 재생 도중 단일 청음 클릭 시 사운드 중첩 정책.
+  - 위 사항들은 현재 시점에서 작업을 진행하지 않고 참고 사항으로만 문서에 보존.
+
+### 2.3 [사용자 지침] 명세 및 TODO에 반영하여 개발 시 적용 (Issues 2, 3, 5)
+- **Issue 2 (DB 호환성 & 라이브 템포 조절)**:
+  - 기존 SQLite DB(`data/cpmanager.db`) 보존을 위해 `PRAGMA table_info(projects)`를 검사하여 `tempo`, `time_signature` 컬럼을 안전하게 `ALTER TABLE`하는 마이그레이션 로직 추가.
+  - 청음 재생 중 BPM 슬라이더 조작 시 오디오가 리셋되지 않고 실시간으로 템포가 바뀌도록 Live Update 반영.
+- **Issue 3 (Tone.js SSR 안전성 & 비트 지속시간 & 보이스 고갈 방지)**:
+  - Next.js 15 App Router 환경에서 빌드 시 `window is not defined` 에러를 방지하도록 클라이언트 모듈 로딩 가드 구축.
+  - 마디 내 `beat: 1~4` 목록을 분석하여 4박/2박/1박 지속시간(Duration)을 자동 계산하는 유틸리티 명세화.
+  - 빠른 연주 시 오디오 찢어짐 및 메모리 누수를 방지하기 위한 `maxPolyphony: 16` 및 릴리즈 엔벨로프 최적화.
+  - 재생 중 코드 변경 시 재생 위치를 유지하며 큐를 갱신하는 핫 리스케줄링(Hot-Rescheduling) 지원.
+- **Issue 5 (DAW MIDI 빈 마디 쉼표 & 섹션 마커)**:
+  - 코드가 비어 있는 마디는 온쉼표(`duration: '1', rest: true`)를 필수 삽입하여 타임라인 붕괴 방지.
+  - 각 송폼 섹션의 첫 마디에 `addMarker(section.name)`를 추가하여 DAW 상단에 섹션명이 자동으로 표시되도록 구현.
+
+---
+
+## 3. 작성 및 업데이트된 문서 산출물
+
+1. **`enhance-playable.md`**:
+   - 오디오 재생 및 MIDI 내보내기 전체 아키텍처 및 상세 명세
+   - Tone.js 및 midi-writer-js 선정 근거, 기능 목록, DB vs LocalStorage 정책
+   - 코드 인터벌/보이싱 상수 맵, DAW 연동 멀티 트랙 스펙
+   - 기술적 제약사항 및 참고 사항/추후 보완 과제
+2. **`enhance-playable-todo.md`**:
+   - Phase 1: 코드 보이싱 도메인 로직 및 단위 테스트
+   - Phase 2: DB 스키마(tempo) 마이그레이션 및 API/Draft 연동
+   - Phase 3: Tone.js 클라이언트 오디오 엔진 구축
+   - Phase 4: 재생 컨트롤러 UI (`PlaybackToolbar`) 구현
+   - Phase 5: 재생 헤드 동기화 및 단일 청음(Audition) 연동
+   - Phase 6: DAW 연동 MIDI 파일 내보내기 (`midi-writer-js`)
+   - Phase 7: 종합 테스트, 회귀 검증 및 문서화
+   - 부록: 참고 사항 및 추후 보완 과제
+3. **`wave_log/playable_wave0.log`**: 본 사전 검토 및 기획 확정 로그
+
+---
+
+## 4. Next Step
+
+- 계획된 **Phase 1: 음악 이론 기반 코드 보이싱 모듈 (`chord-voicer.ts`) 및 단위 테스트** 개발 착수.

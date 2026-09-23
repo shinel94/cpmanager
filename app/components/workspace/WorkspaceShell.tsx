@@ -22,6 +22,9 @@ import { InlineChordBuilder } from "@/app/components/chordchart/InlineChordBuild
 import { TechniqueCard } from "@/app/components/analysis/TechniqueCard";
 import { RecommendationPanel } from "@/app/components/recommendation/RecommendationPanel";
 import { UserProgressionsModal } from "@/app/components/progression/UserProgressionsModal";
+import { PlaybackToolbar } from "@/app/components/audio/PlaybackToolbar";
+import type { PlayheadPosition } from "@/app/lib/client/audio/audio-scheduler";
+import { playAuditionChord } from "@/app/lib/client/audio/audition";
 
 export function WorkspaceShell() {
   const toast = useToast();
@@ -48,6 +51,7 @@ export function WorkspaceShell() {
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
   const [selectedBarPosition, setSelectedBarPosition] = useState<number | null>(null);
   const [selectedBeat, setSelectedBeat] = useState<number | null>(null);
+  const [activePlayhead, setActivePlayhead] = useState<PlayheadPosition | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
   // Modals state
@@ -273,6 +277,7 @@ export function WorkspaceShell() {
               degree: targetChord.degree,
               quality: targetChord.quality,
             });
+            playAuditionChord(targetChord, project.tonic);
             runTechniqueAnalysis(
               activeSection.id,
               selectedBarPosition,
@@ -378,6 +383,12 @@ export function WorkspaceShell() {
         onUpdateProjectName={(name) => updateMeta(name)}
       />
 
+      {/* Playback Controls Toolbar */}
+      <PlaybackToolbar
+        activeSectionId={activeSectionId}
+        onPlayheadTick={(pos) => setActivePlayhead(pos)}
+      />
+
       {/* 3-Panel Main Workspace */}
       <WorkspaceLayout
         leftTitle="송폼 & 조성"
@@ -465,63 +476,76 @@ export function WorkspaceShell() {
               </div>
               <div className="grid grid-cols-7 gap-2">
                 {diatonicChords.map((chord) => (
-                  <button
-                    key={chord.degree}
-                    type="button"
-                    onClick={() => {
-                      if (!activeSection || activeSection.bars.length === 0) {
-                        toast.warning("먼저 송폼 구간을 선택하거나 생성하세요.");
-                        return;
-                      }
+                  <div key={chord.degree} className="relative group">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!activeSection || activeSection.bars.length === 0) {
+                          toast.warning("먼저 송폼 구간을 선택하거나 생성하세요.");
+                          return;
+                        }
 
-                      // 2-Step Interaction: Target selected bar first, or fallback to first empty bar
-                      let targetBarPosition = selectedBarPosition;
-                      if (!targetBarPosition) {
-                        const emptyBar = activeSection.bars.find(
-                          (b) => b.chords.length === 0,
+                        // 2-Step Interaction: Target selected bar first, or fallback to first empty bar
+                        let targetBarPosition = selectedBarPosition;
+                        if (!targetBarPosition) {
+                          const emptyBar = activeSection.bars.find(
+                            (b) => b.chords.length === 0,
+                          );
+                          targetBarPosition = emptyBar ? emptyBar.position : 1;
+                          setSelectedBarPosition(targetBarPosition);
+                          toast.info(
+                            `선택된 마디가 없어 #${targetBarPosition} 마디가 자동 선택되었습니다.`,
+                          );
+                        }
+
+                        const beatToSet = selectedBeat || 1;
+                        const targetBar = activeSection.bars.find(
+                          (b) => b.position === targetBarPosition,
                         );
-                        targetBarPosition = emptyBar ? emptyBar.position : 1;
-                        setSelectedBarPosition(targetBarPosition);
-                        toast.info(
-                          `선택된 마디가 없어 #${targetBarPosition} 마디가 자동 선택되었습니다.`,
+                        const existingChord = targetBar?.chords.find(
+                          (c) => c.beat === beatToSet,
                         );
-                      }
 
-                      const beatToSet = selectedBeat || 1;
-                      const targetBar = activeSection.bars.find(
-                        (b) => b.position === targetBarPosition,
-                      );
-                      const existingChord = targetBar?.chords.find(
-                        (c) => c.beat === beatToSet,
-                      );
-
-                      setChord(activeSection.id, targetBarPosition, {
-                        beat: beatToSet,
-                        degree: chord.degree,
-                        quality: chord.quality,
-                      });
-                      runTechniqueAnalysis(
-                        activeSection.id,
-                        targetBarPosition,
-                        beatToSet,
-                        chord,
-                        existingChord,
-                      );
-                      toast.success(
-                        `${activeSection.name} #${targetBarPosition} 마디${
-                          beatToSet > 1 ? ` ${beatToSet}박` : ""
-                        }에 '${chord.displayName}'(${chord.degree}) 코드가 할당되었습니다.`,
-                      );
-                    }}
-                    className="p-2.5 rounded-lg border border-slate-200 bg-slate-50/70 hover:bg-indigo-50 hover:border-indigo-300 text-center transition group cursor-pointer"
-                  >
-                    <div className="text-sm font-bold text-slate-800 group-hover:text-indigo-600">
-                      {chord.displayName}
-                    </div>
-                    <div className="text-xs text-slate-400 group-hover:text-indigo-500 font-serif mt-0.5">
-                      {chord.degree}
-                    </div>
-                  </button>
+                        setChord(activeSection.id, targetBarPosition, {
+                          beat: beatToSet,
+                          degree: chord.degree,
+                          quality: chord.quality,
+                        });
+                        playAuditionChord(chord, project.tonic);
+                        runTechniqueAnalysis(
+                          activeSection.id,
+                          targetBarPosition,
+                          beatToSet,
+                          chord,
+                          existingChord,
+                        );
+                        toast.success(
+                          `${activeSection.name} #${targetBarPosition} 마디${
+                            beatToSet > 1 ? ` ${beatToSet}박` : ""
+                          }에 '${chord.displayName}'(${chord.degree}) 코드가 할당되었습니다.`,
+                        );
+                      }}
+                      className="w-full p-2.5 rounded-lg border border-slate-200 bg-slate-50/70 hover:bg-indigo-50 hover:border-indigo-300 text-center transition cursor-pointer"
+                    >
+                      <div className="text-sm font-bold text-slate-800 group-hover:text-indigo-600">
+                        {chord.displayName}
+                      </div>
+                      <div className="text-xs text-slate-400 group-hover:text-indigo-500 font-serif mt-0.5">
+                        {chord.degree}
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        playAuditionChord(chord, project.tonic);
+                      }}
+                      className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 p-0.5 text-[10px] text-slate-400 hover:text-indigo-600 hover:bg-white rounded transition shadow-2xs cursor-pointer"
+                      title={`${chord.displayName} (${chord.degree}) 코드 소리 듣기`}
+                    >
+                      🔊
+                    </button>
+                  </div>
                 ))}
               </div>
 
@@ -622,6 +646,8 @@ export function WorkspaceShell() {
                 selectedBarPosition={selectedBarPosition}
                 selectedBeat={selectedBeat}
                 selectedStartBar={activeStartBar}
+                activePlayhead={activePlayhead}
+                onAuditionChord={(chord) => playAuditionChord(chord, project.tonic)}
                 onSelectBar={(secId, barPos) => {
                   setActiveSectionId(secId);
                   setSelectedBarPosition(barPos);
@@ -712,6 +738,8 @@ export function WorkspaceShell() {
                 selectedBarPosition={selectedBarPosition}
                 selectedBeat={selectedBeat}
                 selectedStartBar={activeStartBar}
+                activePlayhead={activePlayhead}
+                onAuditionChord={(chord) => playAuditionChord(chord, project.tonic)}
                 onSelectBar={(barPos) => {
                   setSelectedBarPosition(barPos);
                   setSelectedBeat(null);

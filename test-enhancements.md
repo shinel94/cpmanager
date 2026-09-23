@@ -4,31 +4,32 @@
 
 - **대상 시스템**: `cpmanager` (Next.js 15.5.0 + React 19.1.0 + SQLite WAL 로컬 작곡 보조 웹 애플리케이션)
 - **대상 계층**:
-  - **Backend (BE)**: Next.js Route Handlers, SQLite 트랜잭션/마이그레이션, 도메인 엔진(`harmonic-math`, `technique-matcher`, `progression-analyzer`), 리포지토리
-  - **Frontend (FE)**: React 19 컴포넌트(`WorkspaceShell`, `FullSongFormView`, `InlineChordBuilder`, `RecommendationPanel` 등), Context/Reducer, 키보드/마우스 이벤트, 비동기 디바운스
-  - **End-to-End (E2E)**: 헤드리스 브라우저 기반의 5대 핵심 사용자 여정(User Journey), 데이터 영속성, 브라우저 새로고침 복구
+  - **Backend (BE)**: Next.js Route Handlers, SQLite 트랜잭션/마이그레이션(`projects.tempo`, `time_signature`), 도메인 엔진(`harmonic-math`, `technique-matcher`, `progression-analyzer`), 리포지토리
+  - **Frontend (FE)**: React 19 컴포넌트(`WorkspaceShell`, `FullSongFormView`, `InlineChordBuilder`, `RecommendationPanel`, `PlaybackToolbar`, `BarCard`, `MidiExportButton` 등), Context/Reducer, 키보드/마우스 이벤트, 비동기 디바운스
+  - **Audio & MIDI Engine**: `chord-voicer`(보이싱/음정 계산), `timeline-calculator`(비트 지속시간/타임라인), `audio-engine`(Tone.js PolySynth/Metronome), `audio-scheduler`(실시간 재생/핫 리스케줄링), `midi-exporter`(SMF Type 1 2-Track MIDI 파일 생성)
+  - **End-to-End (E2E)**: 헤드리스 브라우저 기반의 핵심 사용자 여정(User Journey), 작곡→청음→MIDI 내보내기, 데이터 영속성, 브라우저 새로고침 복구
 - **문서 목적**:
-  - 현재 구축된 25개 테스트 파일, **총 79개 테스트 케이스 100% 통과(`79 passed, 0 failed`)**의 성과를 분석하고 남아 있는 사각지대(Testing Gaps)를 명확히 도출
-  - 개발 과정(Wave 0~6, FE Enhance 0~4, BE Enhance 0~5)에서 실제로 발생했던 트러블슈팅 이슈(무한 렌더링 루프, 텐션 비호환, 와일드카드 가드, 5도 방향성 등)를 회귀 방지 테스트로 공식화
+  - 현재 구축된 30개 테스트 파일, **총 101개 테스트 케이스 100% 통과(`101 passed, 0 failed`)**의 성과를 분석하고 남아 있는 사각지대(Testing Gaps)를 명확히 도출
+  - 개발 과정(Wave 0~6, FE Enhance 0~4, BE Enhance 0~5, Playable Wave 0~7)에서 실제로 발생했던 트러블슈팅 이슈(무한 렌더링 루프, 텐션 비호환, 와일드카드 가드, 5도 방향성, SSR window 충돌, 재생 중 코드 수정 시 타임라인 불일치, MIDI 빈 마디 붕괴 등)를 회귀 방지 테스트로 공식화
   - 실제 코드베이스의 타입, 함수명, API 페이로드 규격에 100% 정합하는 구체적 테스트 명세 및 구현 스켈레톤 제공
-  - 작곡 입문자의 **"10분 팝 송폼 완성 시나리오"**와 복잡한 화성학 연산의 데이터 무결성을 보장하는 다계층 품질 게이트(Quality Gate) 확립
+  - 작곡 입문자의 **"10분 팝 송폼 완성 & 실시간 청음 & DAW MIDI 내보내기 시나리오"**와 복잡한 화성학 연산의 데이터 무결성을 보장하는 다계층 품질 게이트(Quality Gate) 확립
 
 ---
 
-## 2. 현행 테스트 아키텍처 및 25개 테스트 파일 완전 분석 매트릭스
+## 2. 현행 테스트 아키텍처 및 30개 테스트 파일 완전 분석 매트릭스
 
 ### 2.1 현행 테스트 러너 구조
 - **테스트 프레임워크**: Node.js 내장 테스트 러너 (`node:test`) + `node:assert/strict`
 - **실행 CLI**: `tsx --test --test-concurrency=1 "test/**/*.test.ts"`
 - **타입 검사**: `npm run typecheck` (`tsc --noEmit`, 0 errors)
-- **실행 속도**: 79개 테스트 기준 약 2.1초 (단일 스레드 직렬 실행)
+- **실행 속도**: 101개 테스트 기준 약 2.5초 (단일 스레드 직렬 실행)
 
-### 2.2 전체 25개 테스트 파일 매핑 분석표
+### 2.2 전체 30개 테스트 파일 매핑 분석표
 
 | 번호 | 테스트 파일명 | 주요 검증 대상 모듈 / 함수 | 테스트 수 | 주요 검증 내용 | 커버리지 평가 |
 |:---:|---|---|:---:|---|:---:|
 | 1 | `client-api.test.ts` | `app/lib/client/api.ts` | 4 | `ApiClientError` 캡슐화, 성공 응답 파싱, 네트워크 단절 에러 핸들링 | 양호 (단위) |
-| 2 | `database.test.ts` | `app/lib/server/db/database.ts` | 1 | SQLite 인메모리 연결 및 테이블 생성/조회 확인 | 기초 (연결) |
+| 2 | `database.test.ts` | `app/lib/server/db/database.ts`, `migrations.ts` | 2 | SQLite 인메모리 연결, 테이블 생성, 증분 마이그레이션(tempo) 데이터 보존 | 우수 (DB/마이그레이션) |
 | 3 | `draft-reducer.test.ts` | `app/lib/client/draft-reducer.ts` | 7 | 메타 갱신, 섹션 추가/삭제, DND 재배치, 마디 확장/축소, 코드 할당/삭제 | 우수 (리듀서) |
 | 4 | `project-serializer.test.ts` | `app/lib/client/project-serializer.ts` | 3 | 백엔드 페이로드 검증 통과, 서버 응답 역직렬화(String ID), 템플릿 생성 | 우수 (직렬화) |
 | 5 | `harmonic-math.test.ts` | `domain/harmonic-math.ts` | 2 | 도수-반음 연산, 완전 5도 하강(Interval 5), 베이스 라인 모션(하강/상승/페달) | 우수 (도메인) |
@@ -52,16 +53,21 @@
 | 23 | `fe-enhancement-analysis.test.ts` | `TechniqueCard.tsx` 고도화 연동 | 3 | 신뢰도(Confidence) & 근거(Evidence) API 결합, 종지 패턴 폴백, 블록 분할 | 우수 (분석) |
 | 24 | `fe-enhancement-inline-builder.test.ts` | `InlineChordBuilder.tsx` 연동 | 3 | 텐션 호환성 및 전위 도수 매핑, 인라인 코드 변형, 실시간 기법 분석 트리거 | 우수 (인라인) |
 | 25 | `fe-enhancement-bulk-sections.test.ts` | `AddSectionModal.tsx` 벌크 연동 | 3 | `ADD_SECTIONS_BULK` 원자적 추가, 삽입 인덱스 보존, 빈 배열 가드 | 우수 (리듀서) |
+| 26 | `chord-voicer.test.ts` | `app/lib/shared/domain/chord-voicer.ts` | 7 | 12음계/MIDI 역변환, 3화음/7화음/텐션/sus4, C3~C5 Smooth Range, 슬래시 베이스 분리 | 우수 (보이싱) |
+| 27 | `project-tempo.test.ts` | `projects.tempo`, `draft-reducer.ts` | 3 | DB tempo 컬럼 영속화, 40~240 BPM 유효성 검증, SET_TEMPO 액션 및 직렬화 | 우수 (DB/상태) |
+| 28 | `timeline-calculator.test.ts` | `app/lib/client/audio/timeline-calculator.ts` | 3 | 비트 간격 분석(온음표/2분음표/4분음표), 빈 마디 온쉼표, SSR window 안전 가드 | 우수 (오디오) |
+| 29 | `audition-playhead.test.ts` | `audition.ts`, `BarCard.tsx` 연동 | 3 | 단일/진행 청음 음표 생성, Node SSR 환경 무동작 가드, 마디/비트 재생헤드 판정 | 우수 (청음/헤드) |
+| 30 | `midi-exporter.test.ts` | `app/lib/client/midi/midi-exporter.ts` | 5 | SMF Type 1 바이너리(MThd/MTrk), 2트랙(Chords/Bass), 절대 틱 스케줄링, 섹션 마커 | 우수 (MIDI) |
 
 ---
 
-## 3. 개발 로그(Wave Logs) 기반 8대 현실적 결함 및 회귀 취약점 (Empirical Vulnerabilities)
+## 3. 개발 로그(Wave Logs) 기반 14대 현실적 결함 및 회귀 취약점 (Empirical Vulnerabilities)
 
 실제 개발 로그(`wave_log/`)에서 보고된 트러블슈팅 이슈들을 분석하여, 향후 시스템 변경 시 반드시 방어해야 하는 핵심 회귀 취약점을 규명했습니다:
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────────┐
-│              개발 과정에서 밝혀진 8대 현실적 결함 (Empirical Vulnerabilities)         │
+│              개발 과정에서 밝혀진 14대 현실적 결함 (Empirical Vulnerabilities)        │
 ├──────────────────────────────────────┬──────────────────────────────────────────┤
 │ 1. [FE-W6-002] 텐션 비호환성 400 에러 │ V7 코드를 major + 7로 전송 시 정규화기 충돌  │
 │ 2. [FE-ENH-0]  useEffect 무한루프    │ excludedDiversityGroups 빈 배열 참조 흔들림│
@@ -71,6 +77,12 @@
 │ 6. [BE-ENH-3]  vii° 세컨더리 오탐     │ 감화음은 토닉화가 불가능하나 매처가 오탐함   │
 │ 7. [FE-ENH-1]  누적 마디 인덱스 왜곡 │ DND 재배치 시 startTotalBar 재계산 누락    │
 │ 8. [FE-ENH-4]  벌크 송폼 position 충돌│ 일괄 추가 시 기존 구간과 position 중복      │
+│ 9. [P1-001]    마이너 7th 익스텐션   │ minor + m7 대신 minor + 7 정규화 일치 필요 │
+│ 10. [P1-002]   고음역대 음역대 점프  │ F# 이상 루트의 C3~C5 Smooth Range 보정     │
+│ 11. [P2-001]   ProjectDraft 템포 호환│ tempo 속성 필수화 시 레거시 픽스처 컴파일 에러│
+│ 12. [P3-001]   Tone.js SSR window참조│ Next.js 서버 빌드 시 AudioContext 부재 에러 │
+│ 13. [P4-001]   재생 중 코드 수정 지연│ 연주 중 코드 변경 시 핫 리스케줄링 미동작    │
+│ 14. [P6-001]   MIDI 빈 마디 타임라인 │ 상대 wait 사용 시 빈 마디로 인한 시간 왜곡   │
 └──────────────────────────────────────┴──────────────────────────────────────────┘
 ```
 
@@ -98,6 +110,24 @@
 8. **[FE-ENH-4] 다중 송폼 일괄 추가(`ADD_SECTIONS_BULK`) 시 position 충돌 방지**:
    - 중간 삽입(`insertIndex`) 시 기존 구간들의 `position`이 순차적으로 밀려나야 함.
    - **방어 필요점**: `position`이 0부터 N-1까지 빈틈없이 연속되는지 검증.
+9. **[P1-001] 마이너 코드의 7th 익스텐션 정규화 불일치**:
+   - Dm7을 `quality: "minor", extension: "m7"`으로 잘못 입력 시 카탈로그 비호환 예외 발생. `chord-catalog`의 `COMPATIBLE_EXTENSIONS` 규격상 이미 minor이므로 `extension: "7"`로 결합되어야 함.
+   - **방어 필요점**: `chordToVoicedNotes` 및 UI 코드 빌더에서 `minor`에 `extension: "7"`이 정확히 결합되어 Dm7 보이싱 음표를 생성하는지 검증.
+10. **[P1-002] 고음역대 루트 코드의 음역대 점프 방지 (Smooth Range)**:
+    - C4 기준으로만 화음을 쌓을 경우 G, A, B 코드가 C4~C5를 초과하여 음역대가 치솟는 불균형 발생.
+    - **방어 필요점**: 피치 클래스가 F#(6) 이상인 루트 코드는 옥타브 3(G3, B3, D4)부터 쌓이도록 `preferSmoothRange: true`를 적용하여 C3~C5 음역대에 자연스럽게 안착하는지 검증.
+11. **[P2-001] ProjectDraft 필수 속성 변경에 따른 기존 테스트 픽스처 타입 에러**:
+    - `ProjectDraft`에 `tempo: number`, `time_signature: string`을 필수 속성으로 지정 시 기존 수십 개 레거시 테스트 픽스처가 타입 오류 발생.
+    - **방어 필요점**: `ProjectDraft` 속성을 `tempo?: number` 선택적으로 유지하고, 직렬화/역직렬화 시 `120`, `"4/4"` 기본값을 자동 보정하는 하위 호환성 검증.
+12. **[P3-001] Tone.js Web Audio 전역 객체 SSR 참조 충돌**:
+    - Next.js 서버 사이드 빌드 시 Web Audio API(`window.AudioContext`) 부재로 빌드가 실패할 위험.
+    - **방어 필요점**: `AudioEngine`의 `await import("tone")` 동적 임포트 격리 및 `typeof window === "undefined"` SSR 무동작 가드가 Node 테스트 및 서버 빌드에서 100% 안전하게 동작하는지 검증.
+13. **[P4-001] 재생 중 코드 수정 시 타임라인 불일치**:
+    - 음악이 재생 중일 때 사용자가 코드를 수정하거나 템포를 조절하면 이전 스냅샷이 계속 연주되는 문제.
+    - **방어 필요점**: 재생 중 `project` 변경 시 현재 재생 위치를 유지하면서 스케줄 큐를 즉각 교체하는 핫 리스케줄링(`reschedule`) 동작 검증.
+14. **[P6-001] MIDI 상대 델타 타임(wait) 사용 시 빈 마디 타임라인 붕괴**:
+    - 코드가 없는 빈 마디가 존재할 때 상대 델타 타임(wait)에 의존하면 뒤따르는 마디들이 앞당겨져 DAW 그리드가 붕괴됨.
+    - **방어 필요점**: 512틱/마디 기반 절대 틱(`startTick = 512*bar + 128*(beat-1)`) 스케줄링 및 곡 끝 마커(`addMarker("End")`)를 통해 빈 마디가 포함되어도 전체 송폼 길이가 DAW에서 완벽히 보존되는지 검증.
 
 ---
 
@@ -177,11 +207,27 @@
   3. 마디 내 2개 이상의 코드가 입력되면 `multi_chord_excluded` 예외 배너(`한 마디에 여러 코드가 입력된 블록입니다`)가 렌더링됨.
   4. 추천 카드에서 `[이 진행 적용하기]` 클릭 시 비어있는 마디에만 코드가 채워지고 기존 코드는 변경되지 않는 비파괴 병합 검증.
 
+#### 📝 [FE-SPEC-05] `PlaybackToolbar` & `BarCard` 재생 제어, 실시간 재생헤드 및 단일 청음
+- **파일 경로**: `test/components/playback-toolbar.test.tsx`
+- **구체적 테스트 케이스**:
+  1. **재생 상태 토글**: `[▶ 재생]` 클릭 시 `AudioScheduler.play()` 호출 및 버튼이 `[⏸ 일시정지]`(테마 하이라이트)로 전환, `[⏹ 정지]` 클릭 시 재생 위치 0 리셋 및 오디오 큐 초기화.
+  2. **실시간 BPM 슬라이더**: 슬라이더(40~240) 조작 시 재생 중단 없이 `AudioScheduler.setBpm(bpm)` 및 `ProjectDraftContext.setTempo(bpm)`이 실시간 동기화 호출됨.
+  3. **루프 및 메트로놈 토글**: `[🔁 반복]` 및 `[⏱️ 메트로놈]` 토글 시 상태 반전 및 로컬스토리지(`useAudioPreferences`) 자동 저장.
+  4. **마디 카드 재생 헤드 동기화**: `BarCard`에 `isPlaying={true}` 및 `playingBeat={2}` 주입 시 `ring-2 ring-emerald-500` 테두리, 헤더 `[▶ 2박]` 펄스 배지, 하단 4-beat dot meter 2번째 도트 활성화.
+  5. **단일 화음 즉시 청음(`🔊`)**: `BarCard` 헤더 및 4박 분할 뷰 박자 셀의 `🔊` 버튼 클릭 시 `playAuditionChord` 호출 확인.
+
+#### 📝 [FE-SPEC-06] `MidiExportButton` SMF Type 1 다운로드 및 토스트 피드백
+- **파일 경로**: `test/components/midi-export-button.test.tsx`
+- **구체적 테스트 케이스**:
+  1. `[💾 MIDI 내보내기 ▾]` 버튼 클릭 시 드롭다운 팝업 노출 (전체 곡 내보내기 옵션 + 섹션별 내보내기 목록).
+  2. '전체 곡 내보내기' 클릭 시 `downloadProjectMidi(project)`가 호출되고 `${project.name}.mid` 다운로드 트리거 및 토스트 알림 표시.
+  3. 특정 섹션(예: Chorus) 선택 시 `targetSectionId: "sec-chorus"` 옵션이 전달되어 해당 섹션 전용 MIDI 파일이 생성됨.
+
 ---
 
-### 4.3 End-to-End (E2E) 5대 사용자 여정 상세 명세 (Playwright)
+### 4.3 End-to-End (E2E) 6대 사용자 여정 상세 명세 (Playwright)
 
-#### 🎭 [E2E-SPEC-01] 10분 팝 작곡 핵심 여정 (Golden Path Composition)
+#### 🎭 [E2E-SPEC-01] 10분 팝 작곡 & 청음 & MIDI 내보내기 골든 패스 (Full Golden Path)
 - **테스트 파일**: `e2e/01-golden-path-composition.spec.ts`
 - **시나리오 단계**:
   1. `page.goto("http://localhost:3000")` 브라우저 접속.
@@ -191,8 +237,11 @@
   5. Intro 1마디 클릭 후 키보드 `1`, 2마디 `5`, 3마디 `6`, 4마디 `4` 차례로 입력 (`G - D - Em - C`).
   6. 우측 기법 분석 카드에 `정격 종지` 또는 `I - V - vi - IV 진행` 배지 및 신뢰도 게이지가 렌더링되는지 확인.
   7. Verse 1~4마디 클릭 후 우측 추천 패널에서 '대중성 우선' 1순위 진행의 `[적용]` 버튼 클릭 → 차트에 4마디 코드가 비파괴적으로 채워짐 확인.
-  8. 상단 `[💾 프로젝트 저장]` 버튼 클릭 → Toast 알림 `"프로젝트가 저장되었습니다"` 노출 확인.
-  9. 브라우저 새로고침(`page.reload()`) 실행 후, 저장했던 G Major 조성과 Intro/Verse 코드가 100% 동일하게 복원되는지 검증.
+  8. **오디오 청음 재생**: 상단 `PlaybackToolbar`의 `[▶ 재생]` 버튼 클릭 → 현재 연주 마디(`BarCard`)가 초록색 링(`ring-emerald-500`)으로 하이라이트되며 실시간 이동하고, `[⏱️ 메트로놈]` 클릭 시 비트 클릭음 연동 확인.
+  9. **실시간 템포 조절**: 재생 중에 BPM 슬라이더를 120에서 136으로 이동 → 음악이 중단되거나 튀지 않고 부드럽게 가속 연주됨 확인.
+  10. **DAW 연동 MIDI 내보내기**: `PlaybackToolbar` 우측 `[💾 MIDI 내보내기 ▾]` 클릭 → '전체 곡 내보내기' 클릭 → 브라우저 파일 다운로드(`*.mid`) 이벤트 감지 및 토스트 알림 확인.
+  11. 상단 `[💾 프로젝트 저장]` 버튼 클릭 → Toast 알림 `"프로젝트가 저장되었습니다"` 노출 확인.
+  12. 브라우저 새로고침(`page.reload()`) 실행 후, 저장했던 G Major 조성, 템포(136 BPM), Intro/Verse 코드가 100% 동일하게 복원되는지 검증.
 
 #### 🎭 [E2E-SPEC-02] 듀얼 뷰 모드 전환 및 실시간 순서 변경
 - **테스트 파일**: `e2e/02-songform-dual-view.spec.ts`
@@ -230,6 +279,15 @@
   2. 메인 차트 하단의 `InlineChordBuilder`에서 화성학 퀵 프리셋 `V7/V (D7)` 클릭.
   3. 2마디의 코드가 즉시 `II dominant 7 (D7)`으로 변경됨 확인.
   4. 모달 딤 없이 우측의 `TechniqueCard`가 즉시 반응하여 `세컨더리 도미넌트` 배지, 90% 이상의 신뢰도, 그리고 `"다음 화음(V)의 완전 5도 위..."` 분석 근거가 실시간 노출됨을 검증.
+
+#### 🎭 [E2E-SPEC-06] 오디오 실시간 재생 제어 및 핫 리스케줄링 (Live Playback & Hot-Rescheduling)
+- **테스트 파일**: `e2e/06-audio-playback.spec.ts`
+- **시나리오 단계**:
+  1. 차트에 4마디 코드 입력 후 상단 `PlaybackToolbar`에서 `[▶ 재생]` 클릭.
+  2. 연주 도중 3번째 마디의 코드를 `vi`에서 `IV`로 변경.
+  3. 오디오 재생이 멈추거나 처음으로 리셋되지 않고 현재 재생 위치를 유지하면서 변경된 화음(`IV`)으로 즉시 핫 리스케줄링되어 발음됨을 검증.
+  4. `PlaybackToolbar`에서 재생 범위를 `"선택 섹션"`으로 변경 후 `[🔁 반복]` 활성화 시, 해당 섹션의 마지막 마디 연주 완료 후 즉시 해당 섹션의 첫 마디로 루프 이동함을 확인.
+  5. 마디 헤더 및 박자 셀의 `🔊` 버튼을 클릭했을 때 전체 재생과 충돌 없이 개별 화음이 즉시 발음됨을 검증.
 
 ---
 
@@ -358,7 +416,7 @@ test("BE Boundary: Projects API 404 on non-existent project", async () => {
 │ - Recommendation API 페이지네이션 초과 & 다양성 전체 배제 방어 테스트       │
 │ - 화성 분석 엔진 희소 블록(Sparse Block) 및 비-Major 표기 거부 테스트      │
 │ - SQLite WAL 동시성 락 대기 및 트랜잭션 예외 시 롤백 무결성 테스트         │
-│ 🎯 완료 기준: 4개 신규 테스트 파일 추가 및 npm test 85개+ 전체 통과        │
+│ 🎯 완료 기준: 4개 신규 테스트 파일 추가 및 npm test 105개+ 전체 통과       │
 └────────────────────────────────────┬────────────────────────────────────┘
                                      │
                                      ▼
@@ -369,19 +427,22 @@ test("BE Boundary: Projects API 404 on non-existent project", async () => {
 │ - FullSongFormView: 누적 마디 렌더링, DND 실시간 순서 변경, 카드 접기     │
 │ - InlineChordBuilder: 화음 성질/텐션 호환성 가드, 전위 베이스 계산       │
 │ - RecommendationPanel: 150ms 디바운스 타이머 및 무한 재렌더링 방지      │
-│ 🎯 완료 기준: 4개 컴포넌트 스위트 추가 및 FE 이벤트 인터랙션 100% 검증     │
+│ - PlaybackToolbar & BarCard: 실시간 재생/정지, BPM 조절, 청음 헤드 동기화 │
+│ - MidiExportButton: 드롭다운 메뉴 및 SMF Type 1 다운로드 트리거          │
+│ 🎯 완료 기준: 6개 컴포넌트 스위트 추가 및 FE 이벤트 인터랙션 100% 검증     │
 └────────────────────────────────────┬────────────────────────────────────┘
                                      │
                                      ▼
 ┌─────────────────────────────────────────────────────────────────────────┐
 │ [Phase 3] E2E 브라우저 자동화 테스트 구축 (@playwright/test)            │
 │ - @playwright/test 설치 및 Next.js 로컬 서버 자동 기동 파이프라인 구성     │
-│ - [E2E-01] 10분 팝 작곡 핵심 여정 (신규 생성 -> 송폼 -> 코드 -> 저장)      │
+│ - [E2E-01] 10분 팝 작곡&청음&MIDI 골든패스 (생성->코드->청음->MIDI->저장)  │
 │ - [E2E-02] 듀얼 뷰 모드 전환 및 실시간 순서 변경                         │
 │ - [E2E-03] 마디 축소 시 코드 유실 방지 가드 (ConfirmDialog)                │
 │ - [E2E-04] 사용자 진행 보관함(Vault) 등록, 와일드카드 검색, 비파괴 적용    │
 │ - [E2E-05] 인라인 코드 빌더 조작 및 실시간 화성 피드백 루프               │
-│ 🎯 완료 기준: Chromium 헤드리스 환경에서 5대 시나리오 100% 통과          │
+│ - [E2E-06] 오디오 실시간 재생 제어 및 핫 리스케줄링 (Live Audio Reschedule)│
+│ 🎯 완료 기준: Chromium 헤드리스 환경에서 6대 시나리오 100% 통과          │
 └────────────────────────────────────┬────────────────────────────────────┘
                                      │
                                      ▼
@@ -401,6 +462,6 @@ test("BE Boundary: Projects API 404 on non-existent project", async () => {
 1. **테스트 우선순위**:
    - 가장 빠르게 신뢰도를 높일 수 있는 **Phase 1(BE 경계값 테스트)**에 즉시 착수합니다. 추가 의존성 설치 없이 기존 `node:test`로 즉시 구현 가능합니다.
 2. **하위 호환성 불변 원칙**:
-   - 신규 테스트를 추가하거나 기존 로직을 보강할 때, 기존 통과 중인 **79개 테스트는 단 하나도 깨지지 않아야 합니다 (Zero Regression)**.
+   - 신규 테스트를 추가하거나 기존 로직을 보강할 때, 현재 통과 중인 **101개 테스트는 단 하나도 깨지지 않아야 합니다 (Zero Regression)**.
 3. **실제 유저 경험 중심 검증**:
-   - 컴포넌트 내부 상태를 직접 검사하기보다는, 실제 화면에 나타나는 텍스트(`진행: C - Am...`), 뱃지(`세컨더리 도미넌트`), 대화상자 알림을 기준으로 테스트를 작성하여 리팩터링에 견고한 테스트를 유지합니다.
+   - 컴포넌트 내부 상태를 직접 검사하기보다는, 실제 화면에 나타나는 텍스트(`진행: C - Am...`), 뱃지(`세컨더리 도미넌트`, `[▶ 2박]`), 대화상자 알림, 오디오 발음 피드백을 기준으로 테스트를 작성하여 리팩터링에 견고한 테스트를 유지합니다.

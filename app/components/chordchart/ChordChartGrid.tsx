@@ -6,12 +6,15 @@ import type { Tonic } from "@/app/lib/shared/catalog/chord-catalog";
 import { BarCard } from "./BarCard";
 import { ConfirmDialog } from "@/app/components/common/ConfirmDialog";
 
+import type { PlayheadPosition } from "@/app/lib/client/audio/audio-scheduler";
+
 export type ChordChartGridProps = {
   section: SectionDraft;
   tonic: Tonic;
   selectedBarPosition: number | null;
   selectedBeat: number | null;
   selectedStartBar: number;
+  activePlayhead?: PlayheadPosition | null;
   onSelectBar: (barPosition: number) => void;
   onSelectBeat: (barPosition: number, beat: number) => void;
   onSelectBlock: (startBar: number, endBar: number) => void;
@@ -19,6 +22,7 @@ export type ChordChartGridProps = {
   onClearBar: (barPosition: number) => void;
   onClearBeat: (barPosition: number, beat: number) => void;
   onClearSection: () => void;
+  onAuditionChord?: (chord: any) => void;
 };
 
 export function ChordChartGrid({
@@ -27,6 +31,7 @@ export function ChordChartGrid({
   selectedBarPosition,
   selectedBeat,
   selectedStartBar,
+  activePlayhead,
   onSelectBar,
   onSelectBeat,
   onSelectBlock,
@@ -34,6 +39,7 @@ export function ChordChartGrid({
   onClearBar,
   onClearBeat,
   onClearSection,
+  onAuditionChord,
 }: ChordChartGridProps) {
   const [viewMode, setViewMode] = useState<"compact" | "subdivided">("compact");
   const [isConfirmClearOpen, setIsConfirmClearOpen] = useState(false);
@@ -177,30 +183,42 @@ export function ChordChartGrid({
 
               {/* Bars Grid (4 per row on desktop) */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {block.bars.map((bar) => (
-                  <BarCard
-                    key={bar.position}
-                    bar={bar}
-                    sectionId={section.id}
-                    tonic={tonic}
-                    isSelected={selectedBarPosition === bar.position}
-                    selectedBeat={
-                      selectedBarPosition === bar.position ? selectedBeat : null
-                    }
-                    viewMode={viewMode}
-                    onSelectBar={(barPos) => {
-                      onSelectBar(barPos);
-                      onSelectBlock(block.startBarNumber, block.endBarNumber);
-                    }}
-                    onSelectBeat={(barPos, beat) => {
-                      onSelectBeat(barPos, beat);
-                      onSelectBlock(block.startBarNumber, block.endBarNumber);
-                    }}
-                    onOpenEdit={onOpenEdit}
-                    onClearBar={onClearBar}
-                    onClearBeat={onClearBeat}
-                  />
-                ))}
+                {block.bars.map((bar) => {
+                  const isBarPlaying =
+                    activePlayhead !== null &&
+                    activePlayhead !== undefined &&
+                    activePlayhead.sectionId === section.id &&
+                    activePlayhead.barPosition === bar.position;
+                  const barPlayingBeat = isBarPlaying ? activePlayhead.beat : null;
+
+                  return (
+                    <BarCard
+                      key={bar.position}
+                      bar={bar}
+                      sectionId={section.id}
+                      tonic={tonic}
+                      isSelected={selectedBarPosition === bar.position}
+                      selectedBeat={
+                        selectedBarPosition === bar.position ? selectedBeat : null
+                      }
+                      viewMode={viewMode}
+                      isPlaying={isBarPlaying}
+                      playingBeat={barPlayingBeat}
+                      onSelectBar={(barPos) => {
+                        onSelectBar(barPos);
+                        onSelectBlock(block.startBarNumber, block.endBarNumber);
+                      }}
+                      onSelectBeat={(barPos, beat) => {
+                        onSelectBeat(barPos, beat);
+                        onSelectBlock(block.startBarNumber, block.endBarNumber);
+                      }}
+                      onOpenEdit={onOpenEdit}
+                      onClearBar={onClearBar}
+                      onClearBeat={onClearBeat}
+                      onAuditionChord={onAuditionChord}
+                    />
+                  );
+                })}
               </div>
             </div>
           );

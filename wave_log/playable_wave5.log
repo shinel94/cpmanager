@@ -1,0 +1,54 @@
+[WAVE LOG: PLAYABLE WAVE 5]
+TIMESTAMP: 2026-09-23T16:43:00+09:00
+TASK: Phase 5 - 마디/코드 시각화 동기화 및 단일 청음(Audition) 인터랙션 연동
+
+1. IMPLEMENTATION SUMMARY
+--------------------------------------------------------------------------------
+1) 단일 청음 및 진행 미리듣기 모듈 구현 (app/lib/client/audio/audition.ts):
+   - playAuditionChord(chord: ChordVoicingInput, tonic: Tonic, durationSeconds = 0.8):
+     * Tone.js SSR 가드(typeof window === "undefined") 적용
+     * chordToVoicedNotes(tonic, chord)로 루트/보이싱/베이스 음표 산출
+     * AudioEngine.getInstance().playAuditionChord(voiced.allNotes, durationSeconds) 즉시 발음
+   - playProgressionPreview(chords: ChordVoicingInput[], tonic: Tonic, secondsPerChord = 0.65):
+     * 추천 진행 4마디 화음을 순차 발음
+     * 기존 진행 타이머 취소 및 stopProgressionPreview() 제공
+
+2) 마디 카드 재생 헤드(Playhead) 시각화 및 단일 청음 (app/components/chordchart/BarCard.tsx):
+   - Props 확장: isPlaying?: boolean, playingBeat?: number | null, onAuditionChord?: (chord: any) => void
+   - 활성 재생 스타일링: ring-2 ring-emerald-500 border-emerald-500 bg-emerald-50/40 shadow-lg
+   - 마디 헤더 재생 뱃지: [▶ N박] 펄스 애니메이션 배지 표시
+   - 4박 분할 뷰(Subdivision): 현재 재생 중인 박자 셀에 ring-2 ring-emerald-500 border-emerald-500 bg-emerald-100 font-bold scale-[1.02] 하이라이트 적용
+   - 1마디 1코드 뷰: 하단 푸터 4/4 옆에 4-beat dot meter 연동 (재생 비트에 맞춰 에메랄드 도트 스케일 및 색상 점멸)
+   - 마디 헤더 🔊 청음 버튼: 클릭 시 해당 마디 코드 즉시 청음
+   - 4박 분할 뷰 박자별 🔊 청음 버튼: 각 박자 단위 코드 개별 청음 제공
+
+3) 전체 송폼 뷰 및 그리드 연동 (ChordChartGrid.tsx, FullSongFormView.tsx, WorkspaceShell.tsx):
+   - WorkspaceShell에서 관리되는 activePlayhead (sectionId, barPosition, beat)를 하위 그리드 컴포넌트에 전파
+   - 각 마디별 isBarPlaying = (activePlayhead.sectionId === section.id && activePlayhead.barPosition === bar.position) 및 barPlayingBeat 계산 후 BarCard에 전달
+   - 단일 섹션 뷰(ChordChartGrid) 및 전체 송폼 뷰(FullSongFormView) 모두 완벽 동기화
+
+4) 다이어토닉 팔레트 & 추천 카드 청음 인터랙션 연동:
+   - 다이어토닉 7코드 팔레트 (WorkspaceShell.tsx):
+     * 코드 카드 클릭하여 마디에 할당 시 즉시 발음 청음 피드백 제공
+     * 각 카드 우측 상단에 🔊 호버 청음 버튼 추가 (마디 할당 없이 단독 청음 가능)
+     * 키보드 단축키 (숫자 1~7) 입력 시에도 즉시 청음 발음
+   - 인라인 코드 빌더 (InlineChordBuilder.tsx):
+     * 실시간 화성 속성 변경 시 상단 실시간 적용 코드명 옆에 [🔊 청음] 버튼 추가
+   - 4마디 추천 패널 (RecommendationPanel.tsx):
+     * 추천 진행 카드에 [🔊 청음] 버튼 추가 -> 4마디 화음 순차 미리듣기
+     * 추천 카드 내 개별 코드 스텝(Degree 및 실음 이름) 클릭 시 단일 화음 즉시 청음
+
+5) 단위 테스트 작성 (test/audition-playhead.test.ts):
+   - chordToVoicedNotes의 다이어토닉, 7th/텐션, 슬래시 코드 음표 산출 검증
+   - Node SSR 환경에서 playAuditionChord, playProgressionPreview의 안전한 무동작 가드 검증
+   - 섹션별/마디별/비트별 playhead active 판정 로직 검증
+
+2. VERIFICATION & QUALITY CHECKS
+--------------------------------------------------------------------------------
+- TypeScript typecheck: npm run typecheck -> 0 errors (PASS)
+- Unit Tests: npm test -> 96 tests passed (100% Pass, 0 Fail)
+- Next.js Production Build: npm run build -> 15/15 static & dynamic routes compiled successfully (PASS)
+
+3. NEXT PHASE
+--------------------------------------------------------------------------------
+- Phase 6: DAW 연동을 위한 MIDI 파일 내보내기 (midi-writer-js, midi-exporter.ts, MidiExportButton.tsx)

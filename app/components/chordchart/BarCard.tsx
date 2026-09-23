@@ -4,6 +4,7 @@ import React from "react";
 import type { BarDraft } from "@/app/types/client";
 import type { Tonic } from "@/app/lib/shared/catalog/chord-catalog";
 import { realizeChord } from "@/app/lib/shared/domain/chord-realizer";
+import { playAuditionChord } from "@/app/lib/client/audio/audition";
 
 export type BarCardProps = {
   bar: BarDraft;
@@ -13,11 +14,14 @@ export type BarCardProps = {
   selectedBeat: number | null;
   viewMode: "compact" | "subdivided";
   cumulativeBarNumber?: number;
+  isPlaying?: boolean;
+  playingBeat?: number | null;
   onSelectBar: (barPosition: number) => void;
   onSelectBeat: (barPosition: number, beat: number) => void;
   onOpenEdit?: (barPosition: number, beat: number) => void;
   onClearBar: (barPosition: number) => void;
   onClearBeat?: (barPosition: number, beat: number) => void;
+  onAuditionChord?: (chord: any) => void;
 };
 
 export function BarCard({
@@ -27,11 +31,14 @@ export function BarCard({
   selectedBeat,
   viewMode,
   cumulativeBarNumber,
+  isPlaying = false,
+  playingBeat = null,
   onSelectBar,
   onSelectBeat,
   onOpenEdit,
   onClearBar,
   onClearBeat,
+  onAuditionChord,
 }: BarCardProps) {
   const hasChords = bar.chords.length > 0;
   const isMultiChord = bar.chords.length > 1;
@@ -40,18 +47,29 @@ export function BarCard({
   const mainChord = hasChords ? bar.chords[0] : null;
   const mainDisplayName = mainChord ? realizeChord(tonic, mainChord) : "";
 
+  const handleAudition = (chordToPlay: any) => {
+    if (!chordToPlay) return;
+    if (onAuditionChord) {
+      onAuditionChord(chordToPlay);
+    } else {
+      playAuditionChord(chordToPlay, tonic);
+    }
+  };
+
   return (
     <div
       onClick={() => onSelectBar(bar.position)}
       onDoubleClick={() => onOpenEdit?.(bar.position, selectedBeat || 1)}
       className={`min-h-[118px] rounded-xl border-2 p-2.5 flex flex-col justify-between cursor-pointer transition select-none group relative ${
-        isSelected
-          ? "ring-2 ring-indigo-500 border-indigo-500 bg-indigo-50/50 shadow-md"
-          : hasChords
-            ? isMultiChord
-              ? "border-purple-300 bg-white hover:border-purple-400 shadow-xs"
-              : "border-indigo-200 bg-white hover:border-indigo-300 shadow-xs"
-            : "border-dashed border-slate-300 bg-slate-50/50 hover:border-indigo-300 hover:bg-white"
+        isPlaying
+          ? "ring-2 ring-emerald-500 border-emerald-500 bg-emerald-50/40 shadow-lg"
+          : isSelected
+            ? "ring-2 ring-indigo-500 border-indigo-500 bg-indigo-50/50 shadow-md"
+            : hasChords
+              ? isMultiChord
+                ? "border-purple-300 bg-white hover:border-purple-400 shadow-xs"
+                : "border-indigo-200 bg-white hover:border-indigo-300 shadow-xs"
+              : "border-dashed border-slate-300 bg-slate-50/50 hover:border-indigo-300 hover:bg-white"
       }`}
     >
       {/* Top Header of Bar */}
@@ -59,12 +77,22 @@ export function BarCard({
         <div className="flex items-center gap-1.5 min-w-0">
           <span
             className={`font-mono font-bold shrink-0 ${
-              isSelected ? "text-indigo-700" : "text-slate-500"
+              isPlaying
+                ? "text-emerald-700"
+                : isSelected
+                  ? "text-indigo-700"
+                  : "text-slate-500"
             }`}
           >
             #{bar.position}
           </span>
-          {!isSelected && cumulativeBarNumber !== undefined && (
+          {isPlaying && (
+            <span className="flex items-center gap-1 bg-emerald-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow-xs animate-pulse whitespace-nowrap shrink-0">
+              <span>▶</span>
+              <span>{playingBeat ? `${playingBeat}박` : "재생"}</span>
+            </span>
+          )}
+          {!isSelected && !isPlaying && cumulativeBarNumber !== undefined && (
             <span
               className="font-mono text-[10px] text-slate-400 font-medium whitespace-nowrap"
               title={`전체 마디 #${cumulativeBarNumber}`}
@@ -101,24 +129,39 @@ export function BarCard({
           )}
         </div>
 
-        {/* Clear Bar Button */}
-        {hasChords ? (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onClearBar(bar.position);
-            }}
-            className="text-slate-300 hover:text-rose-600 hover:bg-rose-50 p-1 rounded transition text-xs font-bold"
-            title="마디 코드 전체 삭제"
-          >
-            ✕
-          </button>
-        ) : (
-          <span className="opacity-0 group-hover:opacity-100 text-[11px] text-indigo-500 font-medium transition">
-            선택
-          </span>
-        )}
+        {/* Bar Actions: Audition & Clear */}
+        <div className="flex items-center gap-1">
+          {/* hasChords && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleAudition(mainChord);
+              }}
+              className="text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 p-1 rounded transition text-xs font-bold"
+              title="마디 코드 즉시 듣기 (Audition)"
+            >
+              🔊
+            </button>
+          ) */}
+          {hasChords ? (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onClearBar(bar.position);
+              }}
+              className="text-slate-300 hover:text-rose-600 hover:bg-rose-50 p-1 rounded transition text-xs font-bold"
+              title="마디 코드 전체 삭제"
+            >
+              ✕
+            </button>
+          ) : (
+            <span className="opacity-0 group-hover:opacity-100 text-[11px] text-indigo-500 font-medium transition">
+              선택
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Main Content Area */}
@@ -128,6 +171,7 @@ export function BarCard({
           {[1, 2, 3, 4].map((beatNum) => {
             const beatChord = bar.chords.find((c) => c.beat === beatNum);
             const isBeatSelected = isSelected && selectedBeat === beatNum;
+            const isBeatPlaying = isPlaying && playingBeat === beatNum;
             const displayName = beatChord ? realizeChord(tonic, beatChord) : "";
 
             return (
@@ -137,24 +181,57 @@ export function BarCard({
                   e.stopPropagation();
                   onSelectBeat(bar.position, beatNum);
                 }}
-                className={`py-1.5 px-1 rounded-lg border text-center transition flex flex-col justify-between min-h-[50px] ${
-                  isBeatSelected
-                    ? "border-indigo-500 bg-indigo-100/80 shadow-2xs"
-                    : beatChord
-                      ? "border-slate-200 bg-slate-50 hover:bg-indigo-50/50"
-                      : "border-slate-200/60 bg-white/60 hover:bg-slate-50"
+                className={`py-1.5 px-1 rounded-lg border text-center transition flex flex-col justify-between min-h-[50px] relative ${
+                  isBeatPlaying
+                    ? "ring-2 ring-emerald-500 border-emerald-500 bg-emerald-100 font-bold scale-[1.02] shadow-xs z-1"
+                    : isBeatSelected
+                      ? "border-indigo-500 bg-indigo-100/80 shadow-2xs"
+                      : beatChord
+                        ? "border-slate-200 bg-slate-50 hover:bg-indigo-50/50"
+                        : "border-slate-200/60 bg-white/60 hover:bg-slate-50"
                 }`}
               >
-                <span className="text-[9px] font-mono text-slate-400 block">
-                  {beatNum}박
-                </span>
+                <div className="flex items-center justify-between px-0.5">
+                  <span
+                    className={`text-[9px] font-mono block ${
+                      isBeatPlaying
+                        ? "text-emerald-800 font-bold"
+                        : isBeatSelected
+                          ? "text-indigo-700 font-semibold"
+                          : "text-slate-400"
+                    }`}
+                  >
+                    {beatNum}박
+                  </span>
+                  {beatChord && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleAudition(beatChord);
+                      }}
+                      className="text-[9px] text-slate-400 hover:text-indigo-600 transition"
+                      title={`${beatNum}박 코드 청음`}
+                    >
+                      🔊
+                    </button>
+                  )}
+                </div>
 
                 {beatChord ? (
                   <div className="my-auto">
-                    <span className="text-xs font-bold text-slate-800 block truncate">
+                    <span
+                      className={`text-xs font-bold block truncate ${
+                        isBeatPlaying ? "text-emerald-950" : "text-slate-800"
+                      }`}
+                    >
                       {displayName}
                     </span>
-                    <span className="text-[10px] text-slate-400 font-serif block truncate">
+                    <span
+                      className={`text-[10px] font-serif block truncate ${
+                        isBeatPlaying ? "text-emerald-700" : "text-slate-400"
+                      }`}
+                    >
                       {beatChord.degree}
                     </span>
                   </div>
@@ -200,7 +277,11 @@ export function BarCard({
       ) : hasChords && mainChord ? (
         /* 1-Bar 1-Chord Prominent View */
         <div className="text-center my-auto py-1">
-          <div className="text-2xl font-black text-slate-800 tracking-tight">
+          <div
+            className={`text-2xl font-black tracking-tight ${
+              isPlaying ? "text-emerald-950" : "text-slate-800"
+            }`}
+          >
             {mainDisplayName}
           </div>
           <div className="text-xs text-slate-400 font-serif mt-0.5 flex items-center justify-center gap-1 flex-wrap">
@@ -237,7 +318,26 @@ export function BarCard({
 
       {/* Footer Meter & Status */}
       <div className="flex items-center justify-between text-[10px] text-slate-400 font-mono border-t border-slate-100/80 pt-1">
-        <span>4/4</span>
+        <div className="flex items-center gap-1.5">
+          <span>4/4</span>
+          {/* isPlaying && (
+            <div
+              className="flex items-center gap-1 ml-1"
+              title={`현재 ${playingBeat || 1}번째 박자 연주 중`}
+            >
+              {[1, 2, 3, 4].map((b) => (
+                <span
+                  key={b}
+                  className={`w-2 h-2 rounded-full transition-all duration-75 ${
+                    playingBeat === b
+                      ? "bg-emerald-500 scale-125 ring-2 ring-emerald-300"
+                      : "bg-slate-300"
+                  }`}
+                />
+              ))}
+            </div>
+          ) */ }
+        </div>
         <span>
           {hasChords ? `${bar.chords.length}개 코드` : "미입력"}
         </span>

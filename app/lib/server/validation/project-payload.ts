@@ -13,6 +13,8 @@ export type ProjectPayload = {
   name: string;
   tonic: string;
   mode?: string;
+  tempo?: number;
+  time_signature?: string;
   sections: Array<{
     position: number;
     name: string;
@@ -34,6 +36,8 @@ export type NormalizedProjectPayload = {
   name: string;
   tonic: Tonic;
   mode: "major";
+  tempo: number;
+  time_signature: string;
   sections: Array<{
     position: number;
     name: string;
@@ -126,15 +130,34 @@ export function validateProjectPayload(input: unknown): NormalizedProjectPayload
   });
 
   sequentialPositions(sections.map((section) => section.position), sections.length, 0, "section");
+
+  let tempo = 120;
+  if (project.tempo !== undefined) {
+    tempo = integerValue(project.tempo, "tempo", 40);
+    if (tempo > 240) throw new ValidationError("tempo must be <= 240");
+  }
+  const timeSignature =
+    typeof project.time_signature === "string" && project.time_signature.trim() !== ""
+      ? project.time_signature.trim()
+      : "4/4";
+
   return {
     name: project.name.trim(),
     tonic: project.tonic as Tonic,
     mode: "major",
+    tempo,
+    time_signature: timeSignature,
     sections,
   };
 }
 
-export function validateProjectCreation(input: unknown): { name: string; tonic: Tonic; mode: "major" } {
+export function validateProjectCreation(input: unknown): {
+  name: string;
+  tonic: Tonic;
+  mode: "major";
+  tempo: number;
+  time_signature: string;
+} {
   const value = objectValue(input, "project");
   if (typeof value.name !== "string" || value.name.trim() === "") {
     throw new ValidationError("Project name is required");
@@ -145,5 +168,22 @@ export function validateProjectCreation(input: unknown): { name: string; tonic: 
   if (value.mode !== undefined && value.mode !== "major") {
     throw new ValidationError("Only major mode is supported");
   }
-  return { name: value.name.trim(), tonic: value.tonic as Tonic, mode: "major" };
+
+  let tempo = 120;
+  if (value.tempo !== undefined) {
+    tempo = integerValue(value.tempo, "tempo", 40);
+    if (tempo > 240) throw new ValidationError("tempo must be <= 240");
+  }
+  const timeSignature =
+    typeof value.time_signature === "string" && value.time_signature.trim() !== ""
+      ? value.time_signature.trim()
+      : "4/4";
+
+  return {
+    name: value.name.trim(),
+    tonic: value.tonic as Tonic,
+    mode: "major",
+    tempo,
+    time_signature: timeSignature,
+  };
 }

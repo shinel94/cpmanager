@@ -1,6 +1,6 @@
 import type { DatabaseSync } from "node:sqlite";
 
-export const MIGRATION_VERSION = 1;
+export const MIGRATION_VERSION = 2;
 
 export function applyMigrations(database: DatabaseSync): void {
   database.exec(`
@@ -11,6 +11,8 @@ export function applyMigrations(database: DatabaseSync): void {
       name TEXT NOT NULL,
       tonic TEXT NOT NULL,
       mode TEXT NOT NULL DEFAULT 'major',
+      tempo INTEGER NOT NULL DEFAULT 120 CHECK (tempo BETWEEN 40 AND 240),
+      time_signature TEXT NOT NULL DEFAULT '4/4',
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
     );
@@ -123,4 +125,22 @@ export function applyMigrations(database: DatabaseSync): void {
     CREATE INDEX IF NOT EXISTS idx_technique_rules_priority
       ON technique_rules(enabled, priority DESC, id ASC);
   `);
+
+  // Ensure incremental column migration for existing projects table
+  const projectColumns = database
+    .prepare("PRAGMA table_info(projects)")
+    .all() as unknown as Array<{ name: string }>;
+  const columnNames = new Set(projectColumns.map((col) => col.name));
+
+  if (!columnNames.has("tempo")) {
+    database.exec(
+      "ALTER TABLE projects ADD COLUMN tempo INTEGER NOT NULL DEFAULT 120 CHECK (tempo BETWEEN 40 AND 240);"
+    );
+  }
+  if (!columnNames.has("time_signature")) {
+    database.exec(
+      "ALTER TABLE projects ADD COLUMN time_signature TEXT NOT NULL DEFAULT '4/4';"
+    );
+  }
 }
+

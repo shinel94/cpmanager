@@ -46,6 +46,8 @@ export function createEmptyProject(
     name,
     tonic,
     mode: "major",
+    tempo: 120,
+    time_signature: "4/4",
     sections: [],
   };
 }
@@ -59,6 +61,8 @@ export function createDefaultPopProject(
     name,
     tonic,
     mode: "major",
+    tempo: 120,
+    time_signature: "4/4",
     sections: [
       createSection("Intro", 4, 0),
       createSection("Verse", 8, 1),
@@ -116,6 +120,8 @@ export function serializeProjectDraft(
     name: draft.name.trim() || "Untitled Project",
     tonic: draft.tonic,
     mode: "major",
+    tempo: draft.tempo || 120,
+    time_signature: draft.time_signature || "4/4",
     sections,
   };
 }
@@ -169,8 +175,11 @@ export function hydrateProjectDraft(serverData: any): ProjectDraft {
     name: String(project?.name ?? "불러온 프로젝트"),
     tonic: (project?.tonic as Tonic) ?? "C",
     mode: "major",
+    tempo: Number(project?.tempo) || 120,
+    time_signature: String(project?.time_signature ?? "4/4"),
     sections,
     createdAt: project?.created_at,
     updatedAt: project?.updated_at,
   };
 }
+

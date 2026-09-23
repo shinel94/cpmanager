@@ -1,0 +1,139 @@
+# Audio Playback Enhancement Wave 8 Log (Bass & Synth Chord Duration Optimization)
+
+## Status
+
+- Date: 2026-09-23
+- Scope: 베이스(Base/Bass) 및 신스 화음(Synth Chord)의 재생 길이 불일치 원인 분석, Tone.js Transport Time duration 파싱 오류 해결, 신디사이저 채널 분리 및 엔벨로프 최적화
+- Status: Complete
+
+---
+
+## 1. 문제 현상 (Issue Description)
+
+1. **베이스 음 잔향 이슈**: 오디오 재생(`AudioScheduler`) 및 청음(`playAuditionChord`) 시, 베이스(Bass) 음이 상위 코드 구성음들(`chordNotes`)에 비해 재생 길이가 체감상 훨씬 길게 느껴지고, 마디나 박자가 넘어간 후에도 저음 잔향이 웅웅거리며 다음 화음과 겹치는(Bleeding) 현상 발생.
+2. **신스 코드(화음) 과다 재생 이슈**: 신스 화음 음표 역시 마디/박자 길이에 비해 비정상적으로 길게 유지되어, 다음 마디의 코드 연주와 중첩되며 음악적 리듬감이 무너지는 현상 확인.
+
+---
+
+## 2. 근본 원인 분석 (Root Cause Analysis)
+
+### 2.1 단일 PolySynth 공유로 인한 베이스/화음 엔벨로프 결합
+- 기존 `AudioEngine`에서는 단 하나의 `polySynth` 인스턴스에 `allNotes = [bassNote, ...chordNotes]`를 한 번에 전달하여 발음함:
+  ```typescript
+  // 기존 코드 (audio-scheduler.ts:202)
+  synth.triggerAttackRelease(evt.voiced.allNotes, durationTime, time);
+  ```
+- 이로 인해 화음 패드/피아노용으로 설정된 긴 엔벨로프(`attack: 0.01, decay: 1.2, sustain: 0.25, release: 0.8`)가 C1~C2 음역대의 베이스 음에도 강제 적용됨.
+
+### 2.2 저음역대 음향 물리 및 청각 심리학적 잔향 왜곡 (Fletcher-Munson & Low-Frequency Resonance)
+- **중고음역 화음(C4~G4, 260Hz~800Hz)**: 감쇠(decay)와 음향 마스킹에 의해 release 구간에서 에너지가 빠르게 가청 임계점 이하로 떨어져 사용자가 화음이 종료되었다고 인지함.
+- **저음역 베이스(C1~C2, 32Hz~65Hz)**: 낮은 주파수의 트라이앵글 파형은 큰 변위와 음향 에너지를 가지고 있어 `release: 0.8s` 동안 지속적으로 울림.
+- **시간적 왜곡**: 120 BPM 기준 1박(Quarter Note)은 **0.5초(500ms)**임. 1박짜리 코드를 연주했을 때:
+  * 화음: 0.5초 연주 후 고주파가 빠르게 감쇠되어 약 0.6~0.7초 시점에 종료된 것으로 체감됨.
+  * 베이스: 0.5초 연주 후 0.8초의 거대한 릴리즈 꼬리가 남아 **총 1.3초 이상 저음이 지속 울림**.
+  * 결과적으로 베이스음이 원래 박자 길이의 **2.6배 이상 길게 연주되는 현상**이 발생하여 화음보다 베이스가 훨씬 길게 느껴짐.
+
+### 2.3 치명적 결함: Tone.js duration 표기법 구문 오류 (`parseFloat` Seconds 폴백)
+- `AudioScheduler` 내부 스케줄링 시 duration 문자열 생성 로직:
+  ```typescript
+  // app/lib/client/audio/audio-scheduler.ts:190 (기존 버그 코드)
+  const durationTime = `${evt.durationBeats} * 4n`; // 4분음표 단위
+  ```
+- **Tone.js 내부 파서 결함 (`node_modules/tone/build/esm/core/type/TimeBase.js:120~153`)**:
+  - Tone.js는 표현식 문자열 파싱 시 정규식(`m`, `n`, `s`, `tr`, `samples`, `t` 등)을 순차 검사함.
+  - 문자열 `"${evt.durationBeats} * 4n"` (예: `"4 * 4n"`, `"1 * 4n"`, `"2 * 4n"`)은 **사칙 연산 표현식을 지원하지 않는 Tone.js 정규식 매칭에 모두 실패함**.
+  - 정규식 매칭 실패 시 Tone.js는 다음 폴백 블록을 실행함:
+    ```javascript
+    else if (isString(this._val)) {
+        return parseFloat(this._val); // 단위가 없으면 defaultUnits인 초(seconds)로 반환!
+    }
+    ```
+  - `parseFloat("4 * 4n")` ➜ **4.0초 (4.0s)**
+  - `parseFloat("2 * 4n")` ➜ **2.0초 (2.0s)**
+  - `parseFloat("1 * 4n")` ➜ **1.0초 (1.0s)**
+- **실제 연주 시 파급 효과**:
+  - 120 BPM 기준 4비트(1마디)의 정상 지속 시간은 **2.0초**임.
+  - 그러나 `parseFloat` 폴백으로 인해 **4.0초 동안 지속**됨!
+  - 여기에 신스 릴리즈(0.4s)까지 더해져 **총 4.4초(무려 2개 마디/8박 전체)** 동안 건반을 누르고 있는 상태가 유지됨.
+  - 140 BPM 기준으로는 4비트가 1.71초여야 하나, 4.0초 동안 연주되어 정상 길이의 **2.33배**로 재생됨.
+  - 1박(0.5초)짜리 코드도 1.0초(2박) 동안 연주되어, 모든 신스 코드와 베이스음이 템포와 관계없이 2배 이상의 초 단위 고정 길이로 질질 끌리는 현상의 핵심 원인이었음.
+
+### 2.4 재생 일시정지/정지 시 활성 보이스 릴리즈 누락
+- `stop()` 또는 `pause()` 시점에 `Tone.Transport`만 멈추고 신스 보이스의 `releaseAll()` 처리가 누락되어 남아있는 저음 잔향이 꼬리처럼 계속 울리는 현상 동반.
+
+---
+
+## 3. 수정 및 개선 내역 (Implemented Fixes)
+
+### 3.1 Tone.js Transport Time duration 표기법 완전 정상화 (`beatsToTransportDuration`)
+- 사칙연산 문자열(`* 4n`) 대신 Tone.js 네이티브 Transport Time 포맷(`bars:quarters:sixteenths`)으로 정확하게 변환하는 모듈 함수 구축:
+  ```typescript
+  // app/lib/client/audio/audio-scheduler.ts
+  export function beatsToTransportDuration(durationBeats: number): string {
+    const durBars = Math.floor(durationBeats / 4);
+    const remBeats = durationBeats % 4;
+    const durQuarters = Math.floor(remBeats);
+    const durSixteenths = (remBeats - durQuarters) * 4;
+    return `${durBars}:${durQuarters}:${durSixteenths}`;
+  }
+  ```
+- **변환 결과 매핑**:
+  - 4비트 (4/4 1마디 전음표) ➜ `"1:0:0"` (Tone.js 템포 엔진에 의해 정확히 1마디에 동기화)
+  - 2비트 (2분음표) ➜ `"0:2:0"`
+  - 1비트 (4분음표) ➜ `"0:1:0"`
+  - 3비트 (점2분음표) ➜ `"0:3:0"`
+  - 0.5비트 (8분음표) ➜ `"0:0:2"`
+- 이제 템포(BPM)가 60, 120, 140 등으로 바뀌어도 모든 신스 코드 및 베이스 음이 정확한 마디/박자 경계에서 칼같이 릴리즈됨.
+
+### 3.2 신디사이저 채널 완전 분리 (`app/lib/client/audio/audio-engine.ts`)
+화음 전용 신스와 베이스 전용 신스를 독립적으로 분리 구축:
+1. **화음 전용 신스 (`polySynth`)**:
+   - `envelope`: `attack: 0.01, decay: 0.8, sustain: 0.25, release: 0.4`
+   - 릴리즈를 0.8s에서 0.4s로 정돈하여 코드 간 뭉침을 해소하고 자연스러운 여운 유지.
+2. **베이스 전용 신스 (`bassSynth`)**:
+   - `envelope`: `attack: 0.015, decay: 0.5, sustain: 0.15, release: 0.15`
+   - **릴리즈를 0.15s로 대폭 단축**: 비트/마디가 끝나는 즉시 깔끔하고 명확한 컷오프(Cut-off)를 제공하여 저음 잔향이 다음 화음으로 번지는 현상 원천 차단.
+   - `volume: -8dB`: 저음역 음향 밸런스 조정.
+   - `maxPolyphony: 4`: 빠른 코드 전환 시 보이스 오버랩 및 클리핑 방지.
+
+### 3.3 타임라인 스케줄러 독립 채널 라우팅 (`app/lib/client/audio/audio-scheduler.ts`)
+- `scheduleTimeline` 내에서 화음 음표(`chordNotes`)와 베이스 음표(`bassNote`)를 분리 발음:
+  ```typescript
+  if (!evt.isRest && evt.voiced) {
+    if (chordSynth && evt.voiced.chordNotes.length > 0) {
+      chordSynth.triggerAttackRelease(evt.voiced.chordNotes, durationTime, time);
+    }
+    if (bassSynth && evt.voiced.bassNote) {
+      bassSynth.triggerAttackRelease(evt.voiced.bassNote, durationTime, time);
+    }
+  }
+  ```
+
+### 3.4 단일 청음 옥타브 분기 라우팅 (`AudioEngine.playAuditionChord`)
+- `playAuditionChord(notes, durationSeconds)` 호출 시 음표의 옥타브 번호를 분석:
+  - 옥타브 2 이하(베이스) ➜ `bassSynth` (타이트한 release 0.15s)
+  - 옥타브 3 이상(화음) ➜ `polySynth` (release 0.4s)
+- 청음 시에도 베이스음과 화음이 동일한 박자감으로 깔끔하게 종료되도록 보장.
+
+### 3.5 즉시 릴리즈 음소거 (`silenceAll`)
+- `pause()`, `stop()`, `clearSchedule()` 시점에 `engine.silenceAll()`을 호출하여 잔여 음을 즉시 소거.
+
+---
+
+## 4. 검증 결과 (Verification)
+
+1. **타입 안전성**:
+   - `npm run typecheck` ➜ **0 errors (Pass)**
+2. **단위 및 통합 테스트**:
+   - `npm test` ➜ **102 tests passed (100% Pass, 0 Failures)**
+   - `beatsToTransportDuration` 테스트 추가 완료:
+     * 4 beats ➜ `"1:0:0"` (2마디/8박 연주 버그 방지)
+     * 2 beats ➜ `"0:2:0"`
+     * 1 beat ➜ `"0:1:0"`
+     * 3 beats ➜ `"0:3:0"`
+     * 0.5 beat ➜ `"0:0:2"`
+     * 8 beats ➜ `"2:0:0"`
+   - SSR 가드, 단일/진행 청음, 타임라인 계산 등 기존 기능 100% 무결성 유지.
+3. **프로덕션 빌드**:
+   - `npm run build` ➜ **Next.js 15.5.25 성공 (Pass)**
+

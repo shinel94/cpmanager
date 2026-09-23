@@ -1,0 +1,66 @@
+# Audio Playback Enhancement Wave 1 Log
+
+## Status
+
+- Date: 2026-09-23
+- Scope: Phase 1. 음악 이론 기반 코드 보이싱 모듈 (`chord-voicer.ts`) 및 단위 테스트 구축
+- Status: Complete
+
+---
+
+## 1. 구현 내용 (Implemented)
+
+1. **코드 보이싱 계산 모듈 생성 (`app/lib/shared/domain/chord-voicer.ts`)**:
+   - `NOTE_NAMES`: 표준 12음계 플랫 표기 배열 (`["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"]`)
+   - `QUALITY_INTERVALS`: major `[0, 4, 7]`, minor `[0, 3, 7]`, diminished `[0, 3, 6]`, dominant `[0, 4, 7, 10]`, half-diminished `[0, 3, 6, 10]`
+   - `EXTENSION_INTERVALS`: 7, maj7, m7, m7b5, 9, sus4
+   - `VOICING_DEFAULTS`:
+     - 베이스 음역대: C2 (36) ~ B2 (47)
+     - 화음 저음역 기준치: C3 (48)
+     - 화음 고음역 기준치: C4 (60)
+   - `midiToNoteName(midi: number): string`: MIDI 번호 -> "C4", "Eb2" 등의 표준 음이름 변환
+   - `noteNameToMidi(noteName: string): number`: 음이름 -> MIDI 번호 역변환 (F#3, Gb3 등 샵 표기 폴백 지원)
+   - `pitchClassToNoteName(pitchClass: number, octave: number): string`: 피치 클래스(0~11)와 옥타브 결합
+   - `getChordIntervals(quality: Quality, extension: Extension): number[]`:
+     - `sus4`의 경우 3도(3 또는 4)를 제거하고 완전4도(5)로 치환하는 대체 로직 적용
+   - `chordToVoicedNotes(tonic: Tonic, step: ChordStep, options?: VoicingOptions): VoicedChord`:
+     - 슬래시 베이스(`bass_degree`) 우선 적용 및 옥타브 2 배치
+     - F#(6) 이상의 루트는 C3~B3 옥타브로 낮추어 C3~C5 음역대 밸런스 유지 (Smooth Range)
+     - 반환 객체: `bassNote`, `bassMidi`, `chordNotes`, `chordMidis`, `allNotes`, `allMidis`
+
+2. **단위 테스트 슈트 작성 (`test/chord-voicer.test.ts`)**:
+   - `midiToNoteName` 및 `noteNameToMidi` 상호 변환 테스트
+   - `getChordIntervals` 3화음, 7화음, 텐션, `sus4` 인터벌 산출 테스트
+   - C장조 다이어토닉 3화음(C, Dm, G, Bdim) 산출 테스트
+   - 7th 코드 및 텐션(Cmaj7, G7, Dm7, Bm7b5, Gsus4) 산출 테스트
+   - 슬래시/전위 코드(C/E, G/B) 베이스 분리 테스트
+   - 다양한 조성(G, F, Ab 장조) 테스트
+
+---
+
+## 2. 발견된 이슈 및 해결 내역 (Issues and Resolutions)
+
+### Issue P1-001: 마이너 코드의 7th 익스텐션 정규화 불일치
+- **현상**: 단위 테스트에서 Dm7을 `quality: "minor", extension: "m7"`으로 입력했을 때 `Incompatible quality and extension: minor + m7` 예외 발생.
+- **원인 분석**:
+  - `chord-catalog.ts`의 `COMPATIBLE_EXTENSIONS` 규칙에 따르면, 이미 `quality`가 `"minor"`이므로 7th 코드는 `extension: "7"`로 결합되어 `"m"` + `"7"` = `"m7"`으로 직렬화/표현되는 규격임.
+  - `"m7"`은 `quality: "major"`의 익스텐션 목록에도 없고 마이너 전용으로 별도 분리된 문자열이 아니었음.
+- **해결 조치**:
+  - 테스트 케이스의 입력을 `quality: "minor", extension: "7"`으로 `chord-catalog` 공식 규격에 일치하도록 수정하여 통과함.
+
+### Issue P1-002: 고음역대 루트 코드의 음역대 점프 방지 (Smooth Range)
+- **현상**: C4 기준으로만 쌓을 경우, G 코드(G4, B4, D5)나 B 코드(B4, D#5, F#5)의 화음이 너무 높이 치솟아 C 코드(C4, E4, G4)와 교대할 때 소리가 튀는 문제.
+- **해결 조치**:
+  - `preferSmoothRange: true`를 기본 활성화하여, 루트 피치가 F#(6) 이상인 코드는 옥타브 3(G3, B3, D4)부터 쌓이도록 설계하여 C3 ~ C5 음역대 내에 자연스럽게 머물도록 조치함.
+
+---
+
+## 3. 검증 결과 (Verification)
+
+```text
+npm run typecheck -> 0 errors
+npm test -> 87 tests passed (100% Pass, 0 Fail, 0 skipped)
+npm run build -> Next.js 15.5.25 Production build succeeded (15 routes generated)
+```
+
+Gate 1 조건을 완벽히 충족하였으며, 다음 단계는 **Phase 2: DB 스키마(projects.tempo) 마이그레이션 및 API/Draft 연동**입니다.

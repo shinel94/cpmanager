@@ -1,0 +1,101 @@
+[WAVE LOG: PLAYABLE WAVE 6]
+TIMESTAMP: 2026-09-23T16:50:40+09:00
+TASK: Phase 6 사전 검토 및 사양 문서화 (MidiWriterJS GitHub & 공식 문서 분석)
+
+1. MIDI-WRITER-JS 공식 문서 및 GITHUB 분석 내용
+--------------------------------------------------------------------------------
+- GitHub 레포지토리: https://github.com/grimmdude/MidiWriterJS
+- 공식 문서: https://grimmdude.com/MidiWriterJS/docs/
+- 패키지 버전: midi-writer-js@3.2.1 (TypeScript 타입 정의 build/types/main.d.ts 내장)
+
+1) 핵심 클래스 및 API 구조:
+   - MidiWriter.Track:
+     * setTempo(tempo): 분당 비트 수(BPM) 설정.
+     * setTimeSignature(numerator, denominator): 박자표 메타 이벤트 (예: 4, 4).
+     * setKeySignature(key): 조표 설정 (예: 'C', 'G', 'F#', 'Dm').
+     * addTrackName(text): DAW 트랙 이름 지정 (예: "MySong - Chords", "MySong - Bass").
+     * addMarker(text): DAW 편곡 마커 추가 (송폼 섹션명 "Intro", "Verse 1", "Chorus"를 상단 타임라인에 표시).
+     * addEvent(event): NoteEvent 등의 MIDI 이벤트를 트랙에 등록.
+   - MidiWriter.NoteEvent({ options }):
+     * pitch: 음이름 문자열(예: 'C4', 'E4') 또는 배열(화음). MIDI 음 번호 정수(0~127)도 지원.
+     * duration: 지속 시간 문자열 ('1': 온음표, '2': 2분음표, 'd2': 점2분음표, '4': 4분음표, '8': 8분음표).
+     * startTick / tick: 절대 틱 위치. MidiWriterJS는 4분음표당 128 ticks (온음표 512 ticks) 기본 규격을 사용.
+       startTick을 지정하면 wait 값에 의존하지 않고 절대 타임라인 상에 정확히 배치됨.
+     * channel: MIDI 채널 (1~16). Chords: 1, Bass: 2로 분리.
+     * velocity: 음량 (1~100). Chords: 75, Bass: 85.
+     * sequential: false (기본값, 동시 발음 화음).
+   - MidiWriter.Writer([track1, track2]):
+     * buildFile(): Uint8Array 바이트 배열 반환 (표준 SMF Type 1 바이너리, 헤더 청크 MThd + 트랙 청크 MTrk 복수 개).
+     * base64(), dataUri(): Base64 및 Data URI 변환 지원.
+
+2) 빈 마디 쉼표 및 타임라인 붕괴 방지 전략:
+   - 상대 델타 타임(wait) 방식은 마디가 비어 있을 때 오차가 누적될 위험이 있음.
+   - 따라서 각 마디 및 비트의 위치를 절대 틱(startTick)으로 산출:
+     * globalBarOffset = 누적 마디 수 (0-indexed)
+     * barTickStart = globalBarOffset * 512 ticks
+     * chordTick = barTickStart + (chord.beat - 1) * 128 ticks
+   - 이 공식을 적용하면 코드가 비어 있는 마디가 존재하더라도 뒤따르는 마디들이 앞당겨지지 않고 완벽한 절대 그리드에 정렬됨.
+   - 또한 프로젝트의 마지막 마디가 빈 마디일 경우에도 전체 송폼 길이(totalBars * 512 ticks)가 DAW에서 잘리지 않도록 곡 끝 마커(addMarker("End"))를 배치.
+
+3) 트랙 분리 스펙 (SMF Type 1):
+   - Track 1 (Chords):
+     * 채널: 1
+     * 악기명: Acoustic Grand Piano
+     * 음역대: C3~C5 (chordToVoicedNotes의 chordNotes 활용)
+     * 송폼 마커: 각 섹션 시작 시점에 addMarker(section.name) 삽입
+   - Track 2 (Bass):
+     * 채널: 2
+     * 악기명: Acoustic Bass
+     * 음역대: C1~C2 (chordToVoicedNotes의 bassNote 활용)
+     * 용도: DAW에서 베이스 가상악기 트랙에 즉시 매핑 가능하도록 분리
+
+4) 브라우저 다운로드 헬퍼 설계:
+   - buildFile()로 생성된 Uint8Array를 new Blob([bytes], { type: "audio/midi" })로 변환.
+   - URL.createObjectURL(blob) 및 가상 <a> 태그를 통해 클릭 다운로드 자동 트리거 및 URL.revokeObjectURL 메모리 해제.
+
+2. ENHANCE-PLAYABLE.MD 반영 내역
+--------------------------------------------------------------------------------
+- Section 7.2에 MidiWriterJS 공식 문서 분석 및 API 매핑 상세 항목 추가
+- Section 7.3에 MIDI 트랙 구성 및 절대 startTick 기반 빈 마디 보존 스펙 구체화
+- Section 7.4에 클라이언트 내보내기 모듈(midi-exporter.ts) 코드 명세 업데이트
+
+3. PHASE 6 구현 완료 내역
+--------------------------------------------------------------------------------
+1) 패키지 설치 및 타입 정의:
+   - midi-writer-js@3.2.1 설치 완료.
+   - app/types/midi-writer-js.d.ts 작성: TypeScript 모듈 해석 대응 (MidiWriterJS 타입 정의 브릿지).
+
+2) app/lib/client/midi/midi-exporter.ts 구현:
+   - beatsToMidiDuration(durationBeats): 박자 수에 따라 '1', 'd2', '2', '4', '8' MIDI duration 문자열 매핑.
+   - generateProjectMidi(project, options):
+     * Track 1 (Chords): 채널 1, 벨로시티 75, 템포(setTempo) 및 박자표(setTimeSignature(4, 4, 24, 8)) 설정.
+       각 섹션 시작 마디에 addMarker(section.name) 등록하여 DAW 타임라인 섹션 마커 제공.
+       C3~C5 음역대의 chordNotes 음표 이벤트 생성.
+     * Track 2 (Bass): 채널 2, 벨로시티 85, C1~C2 음역대의 bassNote 음표 이벤트 생성.
+     * 절대 틱 스케줄링(startTick = cumBar * 512 + (beat - 1) * 128): 빈 마디가 존재해도 타임라인 붕괴 없이 완벽한 절대 그리드 보존.
+     * 곡 종료 마커(addMarker("End")): 마지막 빈 마디 길이까지 DAW에서 온전히 인식되도록 보장.
+     * targetSectionId 옵션: 전체 곡뿐만 아니라 특정 송폼 섹션만 단독 내보내기 지원.
+   - downloadProjectMidi(project, options):
+     * Uint8Array -> audio/midi Blob -> URL.createObjectURL -> 가상 <a> 태그 자동 클릭 및 메모리 해제(revokeObjectURL).
+
+3) UI 연동 (app/components/audio/MidiExportButton.tsx & PlaybackToolbar.tsx):
+   - MidiExportButton: [💾 MIDI 내보내기 ▾] 드롭다운 버튼 구현.
+     * '전체 곡 내보내기 (.mid)' 메뉴
+     * 각 송폼 섹션별 단일 내보내기 서브메뉴
+     * 다운로드 성공 시 토스트 알림 안내 (`${filename} 다운로드를 시작했습니다.`)
+   - PlaybackToolbar: 볼륨 슬라이더 우측에 MidiExportButton 배치하여 재생 및 내보내기 원스톱 조작 제공.
+
+4) 단위 테스트 작성 (test/midi-exporter.test.ts):
+   - beatsToMidiDuration 박자 매핑 단위 테스트
+   - Standard MIDI File (SMF Type 1, MThd, 2 MTrk chunks) 바이너리 검증
+   - 다중 코드 마디(1박, 2박 혼합) 배치 검증
+   - 빈 마디(empty bar) 포함 시 절대 그리드 타임라인 틱 보존 검증
+   - targetSectionId 옵션을 통한 단일 섹션 내보내기 검증
+
+4. 검증 결과
+--------------------------------------------------------------------------------
+- TypeScript Check: `npm run typecheck` -> 0 errors (Pass)
+- Test Suite: `npm test` -> 101 tests passed (100% Pass, 0 failures, 5 new tests in midi-exporter.test.ts)
+- Production Build: `npm run build` -> Next.js 15.5.25 성공 (Pass)
+- 회귀 여부: 기존 Phase 1~5 및 백엔드/프론트엔드 전 기능 100% 정상 작동 유지
+

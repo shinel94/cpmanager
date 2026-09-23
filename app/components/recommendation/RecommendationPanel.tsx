@@ -5,6 +5,11 @@ import type { BarDraft, SectionDraft } from "@/app/types/client";
 import type { Tonic } from "@/app/lib/shared/catalog/chord-catalog";
 import { apiClient } from "@/app/lib/client/api";
 import { useToast } from "@/app/components/common/Toast";
+import {
+  playAuditionChord,
+  playProgressionPreview,
+  stopProgressionPreview,
+} from "@/app/lib/client/audio/audition";
 
 export type SortCriterion = "popularity" | "connectivity" | "diversity" | "random";
 
@@ -72,6 +77,13 @@ export function RecommendationPanel({
   const [recommendations, setRecommendations] = useState<RecommendationResultItem[]>([]);
   const [emptyReason, setEmptyReason] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
+
+  // Unmount 시 진행 미리듣기 정지
+  useEffect(() => {
+    return () => {
+      stopProgressionPreview();
+    };
+  }, []);
 
   // Compute block bars and checks
   const targetBars = section
@@ -347,11 +359,41 @@ export function RecommendationPanel({
 
               {/* Degrees & Realized Names */}
               <div className="bg-slate-50/80 p-2 rounded-lg border border-slate-100">
-                <div className="text-xs font-bold text-indigo-700 tracking-wide">
-                  {rec.steps.map((s) => s.degree).join(" - ")}
+                <div className="text-xs font-bold text-indigo-700 tracking-wide flex items-center gap-1 flex-wrap">
+                  {rec.steps.map((s, idx) => (
+                    <React.Fragment key={idx}>
+                      {idx > 0 && <span className="text-slate-300 font-normal">-</span>}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          playAuditionChord(s, tonic);
+                        }}
+                        className="hover:text-indigo-950 hover:underline cursor-pointer"
+                        title={`${s.displayName} 단일 코드 청음`}
+                      >
+                        {s.degree}
+                      </button>
+                    </React.Fragment>
+                  ))}
                 </div>
-                <div className="text-xs text-slate-700 font-semibold mt-0.5">
-                  {rec.steps.map((s) => s.displayName).join(" - ")}
+                <div className="text-xs text-slate-700 font-semibold mt-0.5 flex items-center gap-1 flex-wrap">
+                  {rec.steps.map((s, idx) => (
+                    <React.Fragment key={idx}>
+                      {idx > 0 && <span className="text-slate-300 font-normal">-</span>}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          playAuditionChord(s, tonic);
+                        }}
+                        className="hover:text-indigo-600 hover:underline cursor-pointer"
+                        title={`${s.displayName} 단일 코드 청음`}
+                      >
+                        {s.displayName}
+                      </button>
+                    </React.Fragment>
+                  ))}
                 </div>
               </div>
 
@@ -362,42 +404,64 @@ export function RecommendationPanel({
                 </p>
               )}
 
-              {/* Apply Button */}
-              <button
-                type="button"
-                disabled={isTargetBlockLessThanFour || !section}
-                onClick={() => {
-                  if (!section) {
-                    toast.warning("먼저 송폼 구간을 선택하세요.");
-                    return;
-                  }
-                  if (isTargetBlockLessThanFour) {
-                    toast.warning("선택된 블록이 4마디 미만이어서 적용할 수 없습니다.");
-                    return;
-                  }
-                  onApplyRecommendation(
-                    startBar,
-                    rec.steps.map((s) => ({
-                      degree: s.degree,
-                      quality: s.quality,
-                      extension: s.extension,
-                      bass_degree: s.bass_degree,
-                    })),
-                  );
-                  toast.success(
-                    `'${section.name}' #${startBar}~#${endBar} 마디에 '${rec.name}' 진행이 적용되었습니다.`,
-                  );
-                }}
-                className={`w-full py-1.5 text-xs font-bold rounded-lg transition ${
-                  isTargetBlockLessThanFour
-                    ? "cursor-not-allowed bg-slate-100 text-slate-400 border border-slate-200"
-                    : "cursor-pointer bg-indigo-50 text-indigo-700 hover:bg-indigo-600 hover:text-white border border-indigo-200 shadow-2xs"
-                }`}
-              >
-                {isTargetBlockLessThanFour
-                  ? `4마디 미만 (${startBar}~${endBar}마디 적용 불가)`
-                  : `이 진행 ${startBar}~${endBar}마디에 적용하기`}
-              </button>
+              {/* Actions: Progression Audition & Apply Button */}
+              <div className="flex items-center gap-1.5 pt-0.5">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    playProgressionPreview(
+                      rec.steps.map((s) => ({
+                        degree: s.degree,
+                        quality: s.quality,
+                        extension: s.extension,
+                        bass_degree: s.bass_degree,
+                      })),
+                      tonic,
+                    );
+                  }}
+                  className="px-2.5 py-1.5 text-xs font-bold rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition cursor-pointer flex items-center gap-1 shrink-0 shadow-2xs"
+                  title="이 추천 진행 4마디 순차 청음 (미리듣기)"
+                >
+                  <span>🔊</span>
+                  <span>청음</span>
+                </button>
+                <button
+                  type="button"
+                  disabled={isTargetBlockLessThanFour || !section}
+                  onClick={() => {
+                    if (!section) {
+                      toast.warning("먼저 송폼 구간을 선택하세요.");
+                      return;
+                    }
+                    if (isTargetBlockLessThanFour) {
+                      toast.warning("선택된 블록이 4마디 미만이어서 적용할 수 없습니다.");
+                      return;
+                    }
+                    onApplyRecommendation(
+                      startBar,
+                      rec.steps.map((s) => ({
+                        degree: s.degree,
+                        quality: s.quality,
+                        extension: s.extension,
+                        bass_degree: s.bass_degree,
+                      })),
+                    );
+                    toast.success(
+                      `'${section.name}' #${startBar}~#${endBar} 마디에 '${rec.name}' 진행이 적용되었습니다.`,
+                    );
+                  }}
+                  className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition ${
+                    isTargetBlockLessThanFour
+                      ? "cursor-not-allowed bg-slate-100 text-slate-400 border border-slate-200"
+                      : "cursor-pointer bg-indigo-600 text-white hover:bg-indigo-700 shadow-xs"
+                  }`}
+                >
+                  {isTargetBlockLessThanFour
+                    ? `4마디 미만 적용 불가`
+                    : `이 진행 적용하기`}
+                </button>
+              </div>
             </div>
           ))}
 

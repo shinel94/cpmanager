@@ -13,6 +13,8 @@ type ProjectRow = {
   name: string;
   tonic: Tonic;
   mode: "major";
+  tempo: number;
+  time_signature: string;
   created_at: string;
   updated_at: string;
 };
@@ -42,23 +44,23 @@ export function createProject(database: DatabaseSync, input: unknown): number {
   const project = validateProjectCreation(input);
   const now = new Date().toISOString();
   const result = database
-    .prepare("INSERT INTO projects (name, tonic, mode, created_at, updated_at) VALUES (?, ?, ?, ?, ?)")
-    .run(project.name, project.tonic, project.mode, now, now);
+    .prepare("INSERT INTO projects (name, tonic, mode, tempo, time_signature, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)")
+    .run(project.name, project.tonic, project.mode, project.tempo, project.time_signature, now, now);
   return Number(result.lastInsertRowid);
 }
 
 export function listProjects(database: DatabaseSync, query = "") {
   const trimmed = query.trim();
   if (trimmed === "") {
-    return database.prepare("SELECT id, name, tonic, mode, created_at, updated_at FROM projects ORDER BY updated_at DESC, id DESC").all();
+    return database.prepare("SELECT id, name, tonic, mode, tempo, time_signature, created_at, updated_at FROM projects ORDER BY updated_at DESC, id DESC").all();
   }
   return database
-    .prepare("SELECT id, name, tonic, mode, created_at, updated_at FROM projects WHERE name LIKE ? ORDER BY updated_at DESC, id DESC")
+    .prepare("SELECT id, name, tonic, mode, tempo, time_signature, created_at, updated_at FROM projects WHERE name LIKE ? ORDER BY updated_at DESC, id DESC")
     .all(`%${trimmed}%`);
 }
 
 export function getProject(database: DatabaseSync, projectId: number): ProjectRecord | null {
-  const project = database.prepare("SELECT id, name, tonic, mode, created_at, updated_at FROM projects WHERE id = ?").get(projectId) as ProjectRow | undefined;
+  const project = database.prepare("SELECT id, name, tonic, mode, tempo, time_signature, created_at, updated_at FROM projects WHERE id = ?").get(projectId) as ProjectRow | undefined;
   if (!project) return null;
 
   const sections = database.prepare("SELECT id, position, name, bar_count FROM sections WHERE project_id = ? ORDER BY position").all(projectId) as unknown as SectionRow[];
@@ -87,7 +89,7 @@ export function saveProject(database: DatabaseSync, projectId: number, input: Pr
   database.exec("BEGIN");
   try {
     const now = new Date().toISOString();
-    database.prepare("UPDATE projects SET name = ?, tonic = ?, mode = ?, updated_at = ? WHERE id = ?").run(payload.name, payload.tonic, payload.mode, now, projectId);
+    database.prepare("UPDATE projects SET name = ?, tonic = ?, mode = ?, tempo = ?, time_signature = ?, updated_at = ? WHERE id = ?").run(payload.name, payload.tonic, payload.mode, payload.tempo, payload.time_signature, now, projectId);
     database.prepare("DELETE FROM sections WHERE project_id = ?").run(projectId);
 
     const insertSection = database.prepare("INSERT INTO sections (project_id, position, name, bar_count) VALUES (?, ?, ?, ?)");

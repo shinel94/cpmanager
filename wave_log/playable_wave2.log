@@ -1,0 +1,75 @@
+# Audio Playback Enhancement Wave 2 Log
+
+## Status
+
+- Date: 2026-09-23
+- Scope: Phase 2. DB 스키마(projects.tempo, time_signature) 마이그레이션 & 백엔드 API & 클라이언트 Draft 연동
+- Status: Complete
+
+---
+
+## 1. 구현 내용 (Implemented)
+
+1. **SQLite DB 마이그레이션 업데이트 (`app/lib/server/db/migrations.ts`)**:
+   - `MIGRATION_VERSION`을 2로 판올림.
+   - `CREATE TABLE IF NOT EXISTS projects` 정의에 `tempo INTEGER NOT NULL DEFAULT 120 CHECK (tempo BETWEEN 40 AND 240)` 및 `time_signature TEXT NOT NULL DEFAULT '4/4'` 추가.
+   - 기존 생성된 SQLite DB(`data/cpmanager.sqlite`)의 데이터 유실 없이 안전하게 컬럼을 추가하기 위해 `PRAGMA table_info(projects)` 기반 증분 `ALTER TABLE projects ADD COLUMN ...` 마이그레이션 로직 구현.
+   - `npm run db:migrate`를 실행하여 실제 SQLite DB에 컬럼 정상 추가 검증 완료.
+
+2. **백엔드 페이로드 검증 및 리포지토리 연동 (`app/lib/server/`)**:
+   - `validation/project-payload.ts`:
+     - `ProjectPayload` 및 `NormalizedProjectPayload`에 `tempo`, `time_signature` 필드 추가.
+     - `validateProjectPayload` 및 `validateProjectCreation`: 40~240 사이의 정수 BPM 유효성 검증(기본값 120) 및 time_signature(기본값 '4/4') 정규화.
+   - `repositories/project-repository.ts`:
+     - `ProjectRow` 및 `ProjectRecord`에 `tempo`, `time_signature` 필드 추가.
+     - `createProject`: `tempo`, `time_signature` INSERT 반영.
+     - `listProjects` 및 `getProject`: `tempo`, `time_signature` SELECT 반환.
+     - `saveProject`: `tempo`, `time_signature` UPDATE 반영.
+
+3. **클라이언트 타입 및 초안 상태 스토어 연동 (`app/lib/client/`, `app/types/`)**:
+   - `types/client.ts`:
+     - `ProjectDraft`에 `tempo?: number`, `time_signature?: string` 속성 추가 (기존 픽스처 호환성을 위해 optional 선언).
+     - `SerializedProjectPayload`에 `tempo: number`, `time_signature: string` 필수 필드 반영.
+   - `client/project-serializer.ts`:
+     - `createEmptyProject` 및 `createDefaultPopProject`: 기본 `tempo: 120, time_signature: "4/4"` 초기화.
+     - `serializeProjectDraft`: 초안 저장 시 `tempo: draft.tempo || 120`, `time_signature: draft.time_signature || "4/4"` 직렬화.
+     - `hydrateProjectDraft`: 서버 응답으로부터 `tempo`, `time_signature` 파싱 및 기본값 보정.
+   - `client/draft-reducer.ts`:
+     - `SET_TEMPO` 액션 추가: `Math.min(240, Math.max(40, tempo))` 경계값 클램핑 적용.
+   - `client/project-draft-context.tsx`:
+     - `setTempo(tempo: number)` 액션 헬퍼 제공 및 Provider Context Value 노출.
+
+4. **단위 테스트 슈트 작성 (`test/project-tempo.test.ts`)**:
+   - DB 레벨: 기본 tempo(120), 커스텀 tempo(145) 생성 및 listProjects 조회 검증.
+   - DB 레벨: saveProject를 통한 tempo 갱신(85) 및 유효 범위 미만(30)/초과(280) 거부 검증.
+   - 클라이언트 레벨: 초기 템플릿(120), SET_TEMPO 액션(150, 240 클램핑, 40 클램핑), serialize 및 hydrate 무결성 검증.
+
+---
+
+## 2. 발견된 이슈 및 해결 내역 (Issues and Resolutions)
+
+### Issue P2-001: ProjectDraft 필수 속성 변경에 따른 기존 테스트 픽스처 타입 에러
+- **현상**: `ProjectDraft`에 `tempo: number`, `time_signature: string`을 필수 속성으로 지정했을 때, 기존에 작성되어 있던 수많은 테스트 파일(`test/fe-wave*.test.ts`, `CreateProjectModal.tsx`)에서 8개의 타입 오류 발생.
+- **원인 분석**: 기존 컴포넌트 및 테스트 픽스처 팩토리 함수들이 `tempo` 없이 객체를 생성하고 있었음.
+- **해결 조치**:
+  - `ProjectDraft`의 속성을 `tempo?: number`, `time_signature?: string`으로 선택적(optional)으로 선언하고, 직렬화(`serializeProjectDraft`) 및 역직렬화(`hydrateProjectDraft`) 계층에서 기본값(`120`, `"4/4"`) 폴백을 보장하도록 설계하여 기존 모든 픽스처와의 100% 하위 호환성을 확보함.
+
+### Issue P2-002: createProject 인자 구조 오인지에 따른 검증 실패
+- **현상**: 신규 테스트 `test/project-tempo.test.ts`에서 `createProject(db, { project: { name: ... } })`로 전달하여 `Project name is required` 유효성 에러 발생.
+- **원인 분석**:
+  - 리포지토리의 `createProject(database, input)`는 input 자체를 검증 대상 객체로 받음 (`objectValue(input, "project")`의 "project"는 에러 메시지 라벨임).
+- **해결 조치**:
+  - `createProject(db, { name: "...", tonic: "..." })` 형태로 객체를 직접 전달하도록 테스트 코드를 정정하여 통과함.
+
+---
+
+## 3. 검증 결과 (Verification)
+
+```text
+npm run db:migrate -> Wave 1 & Wave 2 incremental migrations applied
+npm run typecheck -> 0 errors
+npm test -> 90 tests passed (100% Pass, 0 Fail, 0 skipped)
+npm run build -> Next.js 15.5.25 Production build succeeded (15 routes generated)
+```
+
+Gate 2 조건을 완벽히 충족하였으며, 다음 단계는 **Phase 3: Tone.js 기반 클라이언트 오디오 엔진 구축 (`audio-engine.ts`, `audio-scheduler.ts`)**입니다.

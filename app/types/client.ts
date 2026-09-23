@@ -30,6 +30,8 @@ export type ProjectDraft = {
   name: string;
   tonic: Tonic;
   mode: "major";
+  tempo?: number; // default 120
+  time_signature?: string; // default "4/4"
   sections: SectionDraft[];
   createdAt?: string;
   updatedAt?: string;
@@ -100,6 +102,8 @@ export type SerializedProjectPayload = {
   name: string;
   tonic: Tonic;
   mode: "major";
+  tempo: number;
+  time_signature: string;
   sections: Array<{
     position: number;
     name: string;

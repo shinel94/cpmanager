@@ -1,0 +1,63 @@
+# Audio Playback Enhancement Wave 4 Log
+
+## Status
+
+- Date: 2026-09-23
+- Scope: Phase 4. 재생 컨트롤러 UI (`PlaybackToolbar.tsx`) 및 로컬 스토리지 설정 훅 구현
+- Status: Complete
+
+---
+
+## 1. 구현 내용 (Implemented)
+
+1. **오디오 환경설정 로컬 스토리지 훅 (`app/lib/client/audio/useAudioPreferences.ts`)**:
+   - `volume`: 0.0 ~ 1.0 (기본값 0.8)
+   - `metronome`: boolean (기본값 false)
+   - `loop`: boolean (기본값 false)
+   - `playScope`: "all" | "section" (기본값 "all")
+   - `localStorage` 자동 로드 및 키(`cpmanager_audio_prefs`) 저장 지원.
+
+2. **재생 컨트롤러 툴바 컴포넌트 (`app/components/audio/PlaybackToolbar.tsx`)**:
+   - **재생/일시정지/정지 제어**:
+     - ▶ 재생 / ⏸ 일시정지 토글 버튼 (상태에 따른 테마 색상 강조)
+     - ⏹ 정지 버튼 (재생 위치 0 리셋 및 오디오 큐 정리)
+   - **실시간 템포(BPM) 조절**:
+     - 40~240 범위의 가로 슬라이더 + 숫자 직접 입력 인풋
+     - 슬라이더 조작 시 `AudioScheduler.setBpm(bpm)`을 즉각 호출하여 연주 중단 없는 실시간 라이브 템포 변경 지원
+     - `ProjectDraftContext.setTempo(bpm)` 동기화로 변경 사항 dirty 감지 및 프로젝트 저장 시 DB 반영 보장
+   - **루프 및 메트로놈 토글**:
+     - 🔁 반복 재생(Loop) On/Off
+     - ⏱️ 메트로놈 On/Off
+   - **재생 범위 선택기 (Scope Selector)**:
+     - 전체 곡("전체 곡") vs 현재 선택된 섹션("선택 섹션") 스코프 분기
+   - **볼륨 슬라이더 및 음소거**:
+     - 0~100% 범위 슬라이더 및 원클릭 음소거(Mute) 토글 버튼
+   - **실시간 재생 헤드 피드백 배지**:
+     - 연주 중일 때 `[Verse] #2마디 [3박]` 형태의 펄스 애니메이션 배지 표시
+     - 일시정지 시 `⏸ 일시정지됨`, 정지 시 `대기 중` 표시
+
+3. **워크스페이스 레이아웃 통합 (`app/components/workspace/WorkspaceShell.tsx`)**:
+   - 상단 헤더 바로 아래 sticky 가로 바 형태로 `PlaybackToolbar` 배치
+   - `activeSectionId` 및 `onPlayheadTick` 핸들러 연동하여 전체 3단 워크스페이스에서 일관되게 상시 노출.
+
+---
+
+## 2. 발견된 이슈 및 해결 내역 (Issues and Resolutions)
+
+### Issue P4-001: 재생 중 코드 수정 시 타임라인 불일치 방지
+- **현상**: 노래가 재생되고 있는 도중에 사용자가 마디의 코드를 바꾸거나 템포를 조절할 때 스케줄러가 이전 프로젝트 스냅샷을 연주하는 문제.
+- **원인 분석**: `play()` 시점에 전달된 `project` 객체 참조가 고정되어 있었음.
+- **해결 조치**:
+  - `PlaybackToolbar` 내에 `useEffect([project, status])` 훅을 두어, `status === "playing"` 상태에서 `project`가 변경되면 즉시 `schedulerRef.current.reschedule(project)`를 호출해 현재 재생 위치를 유지하면서 스케줄 큐를 핫 리스케줄링하도록 조치함.
+
+---
+
+## 3. 검증 결과 (Verification)
+
+```text
+npm run typecheck -> 0 errors
+npm test -> 93 tests passed (100% Pass, 0 Fail, 0 skipped)
+npm run build -> Next.js 15.5.25 Production build succeeded (15 routes generated)
+```
+
+Gate 4 조건을 완벽히 충족하였으며, 다음 단계는 **Phase 5: 마디/코드 시각화 동기화 (`BarCard.tsx`) 및 단일 청음(Audition) 인터랙션 연동**입니다.

@@ -158,6 +158,72 @@ Verse의 차분한 분위기에서 Chorus의 폭발적인 에너지로 전환하
 | **Part 3** | [`progressions_3.json`](file:///Users/gimhyeyeon/Desktop/project/cpmanager/progression/progressions_3.json) | [`seed_progressions_3.sql`](file:///Users/gimhyeyeon/Desktop/project/cpmanager/progression/seed_progressions_3.sql) | 65 ~ 96 | 캐논 베이스 하강 완성형, 라인 클리셰, 모달 애니송, 팝 발라드 빌드업 |
 | **Part 4** | [`progressions_4.json`](file:///Users/gimhyeyeon/Desktop/project/cpmanager/progression/progressions_4.json) | [`seed_progressions_4.sql`](file:///Users/gimhyeyeon/Desktop/project/cpmanager/progression/seed_progressions_4.sql) | 97 ~ 128 | 시티팝 텐션 턴, 서브도미넌트 마이너 종지, 페달 포인트 긴장, 인터루드/아웃트로 |
 | **Part 5** | [`progressions_5.json`](file:///Users/gimhyeyeon/Desktop/project/cpmanager/progression/progressions_5.json) | [`seed_progressions_5.sql`](file:///Users/gimhyeyeon/Desktop/project/cpmanager/progression/seed_progressions_5.sql) | 129 ~ 160 | **J-Rock / 애니송 / 보컬로이드 특화** (마루사 진행, 코무로 진행, 패싱 디미니시, 5도 마이너 Vm 차용, 초고속 질주 모달) |
+| **Part 6** | [`progressions_6.json`](file:///Users/gimhyeyeon/Desktop/project/cpmanager/progression/progressions_6.json) | [`seed_progressions_6.sql`](file:///Users/gimhyeyeon/Desktop/project/cpmanager/progression/seed_progressions_6.sql) | 161 ~ 192 | **J-Rock/밴드, K-Pop 아이돌, 보컬로이드/우타이테, 팝 펑크/브릿팝 (총 32선)** |
+| **Part 7** | [`progressions_7.json`](file:///Users/gimhyeyeon/Desktop/project/cpmanager/progression/progressions_7.json) | [`seed_progressions_7.sql`](file:///Users/gimhyeyeon/Desktop/project/cpmanager/progression/seed_progressions_7.sql) | 193 ~ 304 | **도미넌트(5도) 시작 추천 진행 컬렉션 (7개 송폼 구간별 16선씩 총 112선 완비)** |
+
+### 배치 7 (Part 7) 세부 구성 요약 (193 ~ 304)
+
+도미넌트(5도, `V`)로 강력하게 출발하여 긴장감 형성, 역진행, 또는 색다른 추진력을 부여하는 4마디 진행을 7대 표준 송폼 구간별로 각 16선씩 균형 있게 배치했습니다:
+
+1. **Intro (193 ~ 208)**: 5도 임팩트 출발 블루스/록 앤섬 인트로, 1도 미해소 록 인트로 루프, 믹솔리디안 bVII 리프 등 (16선)
+2. **Verse (209 ~ 224)**: 5-6-4-1 팝 벌스 순환, 5-4-1-6 서정 벌스, 2-5-1 재즈 팝 턴어라운드 벌스, 어쿠스틱 포크 벌스 등 (16선)
+3. **Pre-Chorus (225 ~ 240)**: 5-6-4-5 샌드위치 긴장 빌드업, 순차 하강 후 2도 오픈, 모달 상행(bVI-bVII) 돌파형 빌드업 등 (16선)
+4. **Chorus (241 ~ 256)**: 5-4-1-1 호쾌한 록 앤섬 후렴, 5-4-6-1 J-Rock 질주 코러스, 5-1-4-5 클래식 팝 후렴, 서브도미넌트 마이너(iv) 감성 후렴 등 (16선)
+5. **Interlude (257 ~ 272)**: 기타/신스 솔로를 위한 5도 출발 순환 진행, 믹솔리디안 블루지 솔로 간주, 2-5-1 네오소울 턴어라운드 등 (16선)
+6. **Bridge (273 ~ 288)**: 5도 출발 드라마틱 긴장 고조, bVI-bVII 모달 인터체인지 반전 브릿지, III7 세컨더리 도미넌트 비장미 브릿지 등 (16선)
+7. **Outro (289 ~ 304)**: 5-4-1-1 클래식 록 완전 종지, 페이드아웃 최적화 4코드 아웃트로, 짙은 여운의 iv 모달 엔딩, 서사적 피날레 등 (16선)
+
+### 배치 6 (Part 6) 세부 구성 요약 (161 ~ 192)
+
+1. **J-Rock / J-Band 감성 록 (ID 161 ~ 168)**:
+   - **백넘버 (back number)**: `IV - V - vi - I` (1도 리턴 앤섬 코마로), `IV - V - III7 - vi` (눈물샘 자극 세컨더리 도미넌트 후렴), `I - V/7 - vi - IV` (순차 베이스 하강 캐논 록)
+   - **험브레더스 (Hump Back)**: `vi - IV - I - V` (청춘 질주 파워코드 펑크 록), `IV - I - V - vi` (서브도미넌트 멜로딕 록), `IV - V - vi - V` (프리코러스 5도 킥 오픈)
+   - **하쿠 (Haku)**: `IV - V - iii - IV` (6도 미해소 4도 회귀 몽환 루프), `ii - IV - I - V` (어쿠스틱/인디록 서정 벌스)
+2. **K-Pop 아이돌 전형 진행 (ID 169 ~ 176)**:
+   - **청량/걸그룹 황금 공식**: `IV - V - iii - vi` (트와이스, 여자친구, 아이즈원 식 벅차오름)
+   - **틴크러시 / 걸크러시**: `vi - IV - I - V` (블랙핑크, 르세라핌, 아이브 식 마이너 댄스 팝)
+   - **이지리스닝 / Y2K**: `IV - I - V - vi` (뉴진스, 세븐틴 식 감성 팝 R&B)
+   - **그루비 프리코러스 & 모달 브릿지**: `ii - V - I - IV` (샤이니/레드벨벳 5도 하강), `bVI - bVII - I - I` (에스파/스키즈 에픽 모달 브릿지), `IV - iv - I - I` (아이유/태연 감성 보컬 종지), `vi - V - IV - III7` (오모테 랩/긴장 파트), `I - III7 - vi - IV` (레트로 스윙 팝)
+3. **일본 우타이테 / 보컬로이드(Vocaloid) 특화 진행 (ID 177 ~ 184)**:
+   - **마루사 진행 (Just the Two of Us)**: `IV - III7 - vi - I` (요아소비, DECO*27 등 보컬로이드/우타이테 최고 빈출 펑키 질주 루프)
+   - **오모테 진행**: `vi - V - IV - III7` (Neru, wowaka 등 초고속 BPM 질주곡 시그니처 비장미)
+   - **고속 록 질주 & 서프라이즈 모달**: `IV - V - vi - vi` (6도 파워 루프), `IV - V - I - bVII` (믹솔리디안 전조 턴), `bVI - bVII - vi - I` (크로매틱 질주), `IV - iv - iii - VI7` (애니 OST형 벅찬 발라드), `vi - IV - V - I` (메이저 해방 카덴스), `bVI - bVII - V - vi` (사비 종결 마이너 카덴스)
+4. **팝 펑크 & 브릿팝 대중 밴드 (ID 185 ~ 192)**:
+   - **그린데이 (Green Day / Pop Punk)**: `I - V - vi - IV` (Basket Case 식 팝 펑크의 왕), `I - V - IV - IV` (스트레이트 펑크 록 앤서), `vi - IV - I - V` (21 Guns 식 파워 발라드), `IV - I - V - I` (완전 종지 앤서)
+   - **오아시스 (Oasis / Britpop)**: `I - bVII - IV - I` (Wonderwall, Live Forever 식 믹솔리디안 브릿팝 앤섬), `I - V - vi - iii` (Don't Look Back in Anger 캐논 앤섬), `IV - V - I - vi` (Stand By Me 식 팝 록 앤서), `ii - IV - I - V` (Champagne Supernova 식 몽환적 어쿠스틱 그루브)
+
+---
+
+## 6. 추가 추천 장르 및 화성 분야 (Recommended Future Categories)
+
+추후 진행 데이터를 추가 확장할 때 곡의 완성도와 다양성을 비약적으로 높일 수 있는 3대 추천 화성 분야입니다:
+
+1. **네오소울 & 시티팝 (Neo-Soul & City Pop)**:
+   - 풍부한 텐션(maj7, 9, 11, m7, sus4)과 세컨더리 도미넌트를 적극 활용하는 세련되고 도회적인 그루브
+   - 추천 진행: `IVmaj7 - III7 - vim7 - I7`, `iim7 - V7 - iiim7 - vim7`, `IVmaj7 - V7 - iiim7 - bVImaj7` (서브도미넌트 마이너 대리)
+2. **로파이 힙합 & 칠합 (Lo-Fi Hip-Hop / Chillhop / Bedroom Pop)**:
+   - 2-5-1 재즈 턴어라운드를 기반으로 드롭-2 보이싱과 텐션을 반복 루프화하여 편안하고 감성적인 분위기 형성
+   - 추천 진행: `iim9 - V13 - Imaj9 - vi7`, `IVmaj7 - iv6 - Imaj7 - VI7(b9)`, `iim7 - V7(b9) - Imaj7 - #IVø7`
+3. **시네마틱 & 에픽 게임/애니 OST (Cinematic & Epic OST)**:
+   - 블록버스터 영화나 서사시 게임 사운드트랙에서 웅장한 감정의 파도를 만드는 모달 체인지와 비장한 마이너 스케일 진행
+   - 추천 진행: `vi - bVI - bVII - I`, `i - bVI - bIII - bVII`, `iv - v - vi - I`
+
+---
+
+## 7. 증분 데이터베이스 업데이트 가이드 (`npm run db:update`)
+
+기존 프로젝트와 사용자 데이터를 보존한 채 신규 진행 데이터를 데이터베이스에 적용하려면 다음 명령어를 실행합니다:
+
+```bash
+# Part 6 진행 데이터 (ID 161 ~ 192) 데이터베이스에 증분 반영
+npm run db:update progression/seed_progressions_6.sql
+
+# 또는 임의의 SQL 파일 실행
+npm run db:update <path_to_sql_file>
+
+# 또는 직접 SQL 쿼리 실행
+npm run db:update -- "INSERT INTO ..."
+```
 
 ### 송폼별 전체 통계 (160개 진행 기준)
 - **Verse (절)**: 72개

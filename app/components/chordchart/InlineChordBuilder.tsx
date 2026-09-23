@@ -10,6 +10,7 @@ import {
   MAJOR_DIATONIC_QUALITIES,
 } from "@/app/lib/shared/catalog/chord-catalog";
 import { realizeChord } from "@/app/lib/shared/domain/chord-realizer";
+import { playAuditionChord } from "@/app/lib/client/audio/audition";
 
 export type InlineChordBuilderProps = {
   tonic: Tonic;
@@ -161,6 +162,25 @@ export function InlineChordBuilder({
             <span className="px-2 py-0.5 text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 rounded">
               {realizedName}
             </span>
+            <button
+              type="button"
+              onClick={() => {
+                playAuditionChord(
+                  {
+                    degree: activeDegree,
+                    quality: activeQuality,
+                    extension: activeExtension,
+                    bass_degree: activeBass,
+                  },
+                  tonic,
+                );
+              }}
+              className="px-1.5 py-0.5 text-xs font-bold text-indigo-700 bg-indigo-100 hover:bg-indigo-200 rounded border border-indigo-300 transition cursor-pointer flex items-center gap-0.5"
+              title="현재 설정된 코드 소리 듣기 (Audition)"
+            >
+              <span>🔊</span>
+              <span>청음</span>
+            </button>
             <span className="text-[11px] font-mono text-slate-400">
               ({activeDegree}
               {activeQuality !== "major" ? ` ${activeQuality}` : ""}

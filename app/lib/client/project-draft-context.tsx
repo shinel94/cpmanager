@@ -31,6 +31,7 @@ export type ProjectDraftContextType = {
 
   // Actions
   updateMeta: (name: string, tonic?: Tonic) => void;
+  setTempo: (tempo: number) => void;
   addSection: (name: string, barCount?: number, insertIndex?: number) => void;
   addSections: (
     sections: Array<{ name: string; barCount?: number }>,
@@ -114,6 +115,13 @@ export function ProjectDraftProvider({
   const updateMeta = useCallback(
     (name: string, tonic?: Tonic) => {
       dispatchAction({ type: "UPDATE_META", payload: { name, tonic } });
+    },
+    [dispatchAction],
+  );
+
+  const setTempo = useCallback(
+    (tempo: number) => {
+      dispatchAction({ type: "SET_TEMPO", payload: { tempo } });
     },
     [dispatchAction],
   );
@@ -279,6 +287,7 @@ export function ProjectDraftProvider({
         lastTechnique,
 
         updateMeta,
+        setTempo,
         addSection,
         addSections,
         removeSection,

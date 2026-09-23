@@ -9,12 +9,15 @@
     "typecheck": "tsc --noEmit",
     "test": "tsx --test --test-concurrency=1 \"test/**/*.test.ts\"",
     "db:migrate": "tsx scripts/migrate_wave1.ts",
-    "db:seed": "tsx scripts/seed_wave1.ts"
+    "db:seed": "tsx scripts/seed_wave1.ts",
+    "db:update": "tsx scripts/update_database.ts"
   },
   "dependencies": {
+    "midi-writer-js": "^3.2.1",
     "next": "^15.5.0",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "tone": "^15.1.22"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.3",

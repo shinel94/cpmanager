@@ -7,6 +7,8 @@ import { realizeChord } from "@/app/lib/shared/domain/chord-realizer";
 import { BarCard } from "./BarCard";
 import { ConfirmDialog } from "@/app/components/common/ConfirmDialog";
 
+import type { PlayheadPosition } from "@/app/lib/client/audio/audio-scheduler";
+
 export type FullSongFormViewProps = {
   sections: SectionDraft[];
   tonic: Tonic;
@@ -14,6 +16,7 @@ export type FullSongFormViewProps = {
   selectedBarPosition: number | null;
   selectedBeat: number | null;
   selectedStartBar: number;
+  activePlayhead?: PlayheadPosition | null;
   onSelectBar: (sectionId: string, barPosition: number) => void;
   onSelectBeat: (sectionId: string, barPosition: number, beat: number) => void;
   onSelectBlock: (sectionId: string, startBar: number, endBar: number) => void;
@@ -22,6 +25,7 @@ export type FullSongFormViewProps = {
   onClearBeat: (sectionId: string, barPosition: number, beat: number) => void;
   onClearSection: (sectionId: string) => void;
   onFocusSingleSection: (sectionId: string) => void;
+  onAuditionChord?: (chord: any) => void;
 };
 
 export function FullSongFormView({
@@ -31,6 +35,7 @@ export function FullSongFormView({
   selectedBarPosition,
   selectedBeat,
   selectedStartBar,
+  activePlayhead,
   onSelectBar,
   onSelectBeat,
   onSelectBlock,
@@ -39,6 +44,7 @@ export function FullSongFormView({
   onClearBeat,
   onClearSection,
   onFocusSingleSection,
+  onAuditionChord,
 }: FullSongFormViewProps) {
   const [viewMode, setViewMode] = useState<"compact" | "subdivided">("compact");
   const [sectionToClear, setSectionToClear] = useState<SectionDraft | null>(null);
@@ -406,6 +412,12 @@ export function FullSongFormView({
                         {block.bars.map((bar) => {
                           const isBarSelected =
                             isCurrentActive && selectedBarPosition === bar.position;
+                          const isBarPlaying =
+                            activePlayhead !== null &&
+                            activePlayhead !== undefined &&
+                            activePlayhead.sectionId === sec.id &&
+                            activePlayhead.barPosition === bar.position;
+                          const barPlayingBeat = isBarPlaying ? activePlayhead.beat : null;
 
                           return (
                             <BarCard
@@ -417,6 +429,8 @@ export function FullSongFormView({
                               isSelected={isBarSelected}
                               selectedBeat={isBarSelected ? selectedBeat : null}
                               viewMode={viewMode}
+                              isPlaying={isBarPlaying}
+                              playingBeat={barPlayingBeat}
                               onSelectBar={(barPos) => {
                                 onSelectBar(sec.id, barPos);
                                 onSelectBlock(
@@ -442,6 +456,7 @@ export function FullSongFormView({
                               onClearBeat={(barPos, beat) => {
                                 onClearBeat(sec.id, barPos, beat);
                               }}
+                              onAuditionChord={onAuditionChord}
                             />
                           );
                         })}
